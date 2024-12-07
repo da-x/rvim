@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -166,6 +166,9 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Allow cursor to go after one last character of the line, like in modern editing environments
+vim.o.virtualedit = 'onemore,block'
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -189,6 +192,31 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+
+-- Delete current line with Ctrl-D
+vim.keymap.set('n', '<C-d>', 'dd', { desc = 'Delete current line' })
+
+-- Duplicate current line with <leader>d
+vim.keymap.set('n', '<leader>d', 'yyp', { desc = 'Duplicate current line' })
+
+-- Save current file with Ctrl-X s
+vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
+
+-- Buffer switcher with F2
+vim.keymap.set('n', '<F2>', function() require('telescope.builtin').buffers() end, { desc = 'Switch buffers' })
+
+-- Close buffer with Ctrl-Delete
+vim.keymap.set('n', '<C-Del>', '<cmd>bd<CR>', { desc = 'Close current buffer' })
+
+-- Make End key go after the last character (only in normal mode)
+vim.keymap.set('n', '<End>', function()
+  if vim.fn.col '$' > 1 then
+    vim.fn.cursor(vim.fn.line '.', vim.fn.col '$')
+  end
+end, { desc = 'Go after last character' })
+
+-- Source additional VimScript configuration
+vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -674,7 +702,13 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {
+          settings = {
+            server = {
+              path = vim.fn.expand '$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer',
+            },
+          },
+        },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -765,6 +799,10 @@ require('lazy').setup({
             lsp_format = 'fallback',
           }
         end
+        return {
+          timeout_ms = 500,
+          lsp_format = 'never', -- lsp_format_opt,
+        }
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
@@ -895,6 +933,11 @@ require('lazy').setup({
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
       vim.cmd.colorscheme 'tokyonight-night'
+
+      -- Custom color overrides
+      vim.api.nvim_set_hl(0, 'Normal', { bg = '#000014' }) -- Customize background color
+      -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#7aa2f7' }) -- Example: customize comment color
+      -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
     end,
   },
 
@@ -980,6 +1023,52 @@ require('lazy').setup({
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
+  { -- Expand visual selection incrementally
+    'terryma/vim-expand-region',
+    keys = {
+      { '+', '<Plug>(expand_region_expand)', mode = { 'n', 'v' }, desc = 'Expand selection' },
+      { '_', '<Plug>(expand_region_shrink)', mode = 'v', desc = 'Shrink selection' },
+    },
+  },
+
+  { -- File explorer tree
+    'nvim-tree/nvim-tree.lua',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    opts = {
+      disable_netrw = true,
+      hijack_netrw = true,
+      view = {
+        width = 30,
+        side = 'right',
+      },
+      renderer = {
+        group_empty = true,
+      },
+      filters = {
+        dotfiles = false,
+      },
+      actions = {
+        open_file = {
+          quit_on_open = true,
+        },
+      },
+    },
+    keys = {
+      { '<leader>e', '<cmd>NvimTreeToggle<CR>', desc = 'Toggle file explorer' },
+      { '<F3>', '<cmd>NvimTreeFindFileToggle<CR>', desc = 'Find file in tree and toggle' },
+      { '<C-F3>', '<cmd>NvimTreeToggle<CR>', desc = 'Toggle file explorer' },
+    },
+    config = function(_, opts)
+      require('nvim-tree').setup(opts)
+
+      -- F3 keybindings for insert and command modes
+      vim.keymap.set('!', '<F3>', '<Nop>')
+      vim.keymap.set('i', '<F3>', '<C-c><F3>')
+      vim.keymap.set('!', '<C-F3>', '<Nop>')
+      vim.keymap.set('i', '<C-F3>', '<C-c><C-F3>')
+    end,
+  },
+
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
@@ -992,6 +1081,7 @@ require('lazy').setup({
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, {
   ui = {
+    checker = { enabled = true },
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
     icons = vim.g.have_nerd_font and {} or {
@@ -1011,6 +1101,43 @@ require('lazy').setup({
     },
   },
 })
+
+-- vim.lsp.config("rust_analyzer", {
+--   settings = {
+--     ['rust-analyzer'] = {
+--       settings = {
+--         path = vim.fn.expand('$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer'),
+--         server = {
+--           path = vim.fn.expand('$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer')
+--         },
+--         cmd = vim.fn.expand('$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer'),
+--         cmd_env = {
+--           RUSTUP_TOOLCHAIN = 'nightly',
+--         },
+--       },
+--     }
+--   }
+-- });
+
+-- rust_analyzer.setup {
+--   -- Server-specific settings. See `:help lspconfig-setup`
+--   settings = {
+--     ['rust-analyzer'] = {
+--       inlayHints = {
+--         parameterHints = {
+--           enable = false,
+--         },
+--         typeHints = {
+--           enable = true,
+--         },
+--       },
+--     },
+--   },
+--   cmd_env = {
+--     RUSTUP_TOOLCHAIN = 'nightly',
+--   },
+-- }
+-- vim.lsp.inlay_hint.enable(true)
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
