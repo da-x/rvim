@@ -45,8 +45,26 @@ augroup AutoSetSystemClipboard
   autocmd TextYankPost * call SetSystemClipboard(@")
 augroup END
 
+function! IdentifySyn(...) abort
+  let l:stack = []
+  for l:i in synstack(line('.'), col('.'))
+    call add(l:stack, synIDattr(l:i, 'name') . ', trans: ' . synIDattr(synIDtrans(l:i), 'name'))
+  endfor
+  echo l:stack
+endfunction
+
+command! IdentifySyn call IdentifySyn()
+
 " =============================================================================
-" Variosu editing stuff
+" Various editing stuff
+
+func! EditLocalVimrc()
+  exec ":edit .git/vimrc_local.vim"
+endfun
+
+command! -bar EditLocalVimrc call EditLocalVimrc()
+
+nmap <leader>EL :EditLocalVimrc<CR>
 
 " Removes trailing spaces
 function! TrimWhiteSpace() abort

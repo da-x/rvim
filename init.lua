@@ -1,89 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -140,6 +54,9 @@ vim.o.timeoutlen = 300
 -- Configure how new splits should be opened
 vim.o.splitright = true
 vim.o.splitbelow = true
+
+-- Avoid breakding words
+vim.o.linebreak = true
 
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
@@ -201,9 +118,41 @@ vim.keymap.set('n', '<leader>d', 'yyp', { desc = 'Duplicate current line' })
 
 -- Save current file with Ctrl-X s
 vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
+vim.keymap.set('n', '<C-x><C-s>', '<cmd>w<CR>', { desc = 'Save current file' })
+
+-- Git hunk deletion with Ctrl-g Delete
+vim.keymap.set('n', '<C-g><Del>', function()
+  require('gitsigns').reset_hunk()
+end, { desc = 'Reset Git hunk under cursor' })
+
+-- Git hunk navigation with Ctrl-g Down/Up
+vim.keymap.set('n', '<C-g><Up>', function()
+  require('gitsigns').nav_hunk 'prev'
+end, { desc = 'Go to next Git hunk' })
+vim.keymap.set('n', '<C-g><Down>', function()
+  require('gitsigns').nav_hunk 'next'
+end, { desc = 'Go to next Git hunk' })
+
+-- Toggle comments with Ctrl-r
+vim.keymap.set('n', '<C-r>', 'gcc', { desc = 'Toggle comment on current line', remap = true })
+vim.keymap.set('v', '<C-r>', 'gc', { desc = 'Toggle comment on selection', remap = true })
+
+-- Toggle visual line selection with Ctrl-Space
+vim.keymap.set('n', '<C-Space>', 'V', { desc = 'Enter visual line mode' })
+vim.keymap.set('v', '<C-Space>', '<Esc>', { desc = 'Exit visual mode' })
+
+-- Yank with Enter in visual mode and move to end of selection
+vim.keymap.set('v', '<CR>', 'y`>', { desc = 'Yank selection and move to end' })
 
 -- Buffer switcher with F2
-vim.keymap.set('n', '<F2>', function() require('telescope.builtin').buffers() end, { desc = 'Switch buffers' })
+vim.keymap.set('n', '<F2>', function()
+  require('telescope.builtin').buffers()
+end, { desc = 'Switch buffers' })
+
+-- Recent files (MRU) with Ctrl-F2
+vim.keymap.set('n', '<C-F2>', function()
+  require('telescope.builtin').oldfiles()
+end, { desc = 'Recent files (MRU)' })
 
 -- Close buffer with Ctrl-Delete
 vim.keymap.set('n', '<C-Del>', '<cmd>bd<CR>', { desc = 'Close current buffer' })
@@ -215,10 +164,26 @@ vim.keymap.set('n', '<End>', function()
   end
 end, { desc = 'Go after last character' })
 
+-- Faster moving of the cursor using Ctrl and arrows
+vim.keymap.set('n', '<C-Up>', '{', { silent = true, desc = 'Move to previous paragraph' })
+vim.keymap.set('n', '<C-Down>', '}', { silent = true, desc = 'Move to next paragraph' })
+vim.keymap.set('i', '<C-Up>', '<C-c>{i', { silent = true, desc = 'Move to previous paragraph' })
+vim.keymap.set('i', '<C-Down>', '<C-c>}i', { silent = true, desc = 'Move to next paragraph' })
+vim.keymap.set('v', '<C-Up>', '{', { silent = true, desc = 'Move to previous paragraph' })
+vim.keymap.set('v', '<C-Down>', '}', { silent = true, desc = 'Move to next paragraph' })
+
+vim.keymap.set('n', '<Down>', 'gj', { desc = 'Move down by visual line' })
+vim.keymap.set('n', '<Up>', 'gk', { desc = 'Move up by visual line' })
+
+-- Load utility functions
+local utils = require 'utils'
+
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
 -- Keybinds to make split navigation easier.
+vim.keymap.set('n', '<leader>hi', utils.show_highlight_groups, { desc = 'Show [H]ighlight [I]nfo under cursor' })
+
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
@@ -873,7 +838,7 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        preset = 'enter',
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -892,9 +857,23 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          buffer = {
+            name = 'Buffer',
+            module = 'blink.cmp.sources.buffer',
+            opts = {
+              -- Get completions from all visible buffers
+              get_bufnrs = function()
+                local bufs = {}
+                for _, win in ipairs(vim.api.nvim_list_wins()) do
+                  bufs[vim.api.nvim_win_get_buf(win)] = true
+                end
+                return vim.tbl_keys(bufs)
+              end,
+            },
+          },
         },
       },
 
@@ -935,8 +914,9 @@ require('lazy').setup({
       vim.cmd.colorscheme 'tokyonight-night'
 
       -- Custom color overrides
-      vim.api.nvim_set_hl(0, 'Normal', { bg = '#000014' }) -- Customize background color
-      -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#7aa2f7' }) -- Example: customize comment color
+      vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
+      vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
+      -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
       -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
     end,
   },
@@ -1021,7 +1001,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   { -- Expand visual selection incrementally
     'terryma/vim-expand-region',
@@ -1029,6 +1009,60 @@ require('lazy').setup({
       { '+', '<Plug>(expand_region_expand)', mode = { 'n', 'v' }, desc = 'Expand selection' },
       { '_', '<Plug>(expand_region_shrink)', mode = 'v', desc = 'Shrink selection' },
     },
+  },
+
+  { -- Enhanced markdown support
+    'da-x/vim-markdown',
+    ft = 'markdown',
+    config = function()
+      vim.g.vim_markdown_folding_disabled = 1
+      vim.g.vim_markdown_conceal = 0
+      vim.g.vim_markdown_frontmatter = 1
+      vim.g.vim_markdown_strikethrough = 1
+      vim.g.vim_markdown_new_list_item_indent = 2
+    end,
+  },
+
+  { -- Knots plugin from local path
+    dir = (function()
+      local knots_path = os.getenv 'KNOTS_CONFIG_SCRIPTS_DIR'
+      if not knots_path or knots_path == '' then
+        knots_path = vim.fn.expand '~/.local/share/knots'
+      end
+      return knots_path .. '/vim'
+    end)(),
+    name = 'knots',
+    lazy = false, -- equivalent to 'frozen': 1 - don't update
+    config = function()
+      vim.g.knots_config_script_path = os.getenv 'KNOTS_CONFIG_SCRIPTS_DIR'
+      if not vim.g.knots_config_script_path or vim.g.knots_config_script_path == '' then
+        vim.g.knots_config_script_path = vim.fn.expand '~/.local/share/knots'
+      end
+    end,
+  },
+
+  { -- FZF fuzzy finder
+    'junegunn/fzf.vim',
+    dependencies = { 'junegunn/fzf' },
+    keys = {
+      { '<leader>ff', '<cmd>Files<CR>', desc = 'FZF Files' },
+      { '<leader>fb', '<cmd>Buffers<CR>', desc = 'FZF Buffers' },
+      { '<leader>fg', '<cmd>Rg<CR>', desc = 'FZF Ripgrep' },
+      { '<leader>fl', '<cmd>Lines<CR>', desc = 'FZF Lines in buffers' },
+      { '<leader>fh', '<cmd>History<CR>', desc = 'FZF File history' },
+    },
+    config = function()
+      -- Use ripgrep for Files command if available
+      if vim.fn.executable 'rg' == 1 then
+        vim.env.FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
+      end
+
+      -- Customize fzf layout
+      vim.g.fzf_layout = { down = '~40%' }
+
+      -- Preview window for files
+      vim.g.fzf_preview_window = { 'right:50%', 'ctrl-/' }
+    end,
   },
 
   { -- File explorer tree
@@ -1051,6 +1085,10 @@ require('lazy').setup({
         open_file = {
           quit_on_open = true,
         },
+      },
+      update_focused_file = {
+        enable = true,
+        update_root = true,
       },
     },
     keys = {
@@ -1100,7 +1138,21 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+
+  { -- Local vimrc support for project-specific settings
+    'da-x/local_vimrc',
+    ops = {},
+    config = function()
+      -- Configure local_vimrc
+      vim.g.local_vimrc = { 'vimrc_lcoal.vim' }
+      vim.g.local_vimrc_look_only_in_dot_git = true
+      vim.g.local_vimrc_enable = 1
+      vim.g.local_vimrc_ask = 0
+    end,
+  },
 })
+
+require('lazy').load { plugins = { 'fzf.vim' } }
 
 -- vim.lsp.config("rust_analyzer", {
 --   settings = {
