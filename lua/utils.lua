@@ -2,22 +2,36 @@
 
 local M = {}
 
--- Show highlight groups under cursor
+-- Show highlight groups under cursor (modern Treesitter + legacy fallback)
 function M.show_highlight_groups()
   local line = vim.fn.line '.'
   local col = vim.fn.col '.'
-  local synstack = vim.fn.synstack(line, col)
 
-  if #synstack == 0 then
-    print 'No highlight groups found'
+  -- Get Treesitter highlights
+  local ts_highlights = vim.treesitter.get_captures_at_cursor(0)
+
+  -- If treesitter highlights exist, use :Inspect for detailed info
+  if #ts_highlights > 0 then
+    print 'Treesitter highlights found. Using :Inspect for detailed information...'
+    vim.cmd 'Inspect'
     return
   end
 
+  -- Get legacy syntax highlights (fallback)
+  local syn_id = vim.fn.synID(line, col, 1)
+  local syn_name = vim.fn.synIDattr(syn_id, 'name')
+
+  -- Combine results
   local groups = {}
-  for _, id in ipairs(synstack) do
-    local name = vim.fn.synIDattr(id, 'name')
-    local trans = vim.fn.synIDattr(vim.fn.synIDtrans(id), 'name')
-    table.insert(groups, name .. (trans ~= name and ' -> ' .. trans or ''))
+
+  -- Add legacy syntax if available
+  if syn_name ~= '' then
+    table.insert(groups, syn_name)
+  end
+
+  if #groups == 0 then
+    print 'No highlight groups found'
+    return
   end
 
   print('Highlight groups: ' .. table.concat(groups, ', '))
@@ -99,6 +113,75 @@ function M.adjust_brightness(hex, factor)
   l = math.max(0, math.min(100, l * factor))
   local nr, ng, nb = M.hsl_to_rgb(h, s, l)
   return M.rgb_to_hex(nr, ng, nb)
+end
+
+-- Open markdown link under cursor
+function M.open_markdown_link()
+  local line = vim.fn.getline '.'
+  local col = vim.fn.col '.'
+
+  -- Find markdown link pattern [content](url) around cursor
+  local link_pattern = '%[([^%]]+)%]%(([^%)]+)%)'
+  local start_pos = 1
+
+  while true do
+    local content_start, content_end, _content, url = string.find(line, link_pattern, start_pos)
+    if not content_start then
+      break
+    end
+
+    -- Check if cursor is within this link
+    if col >= content_start and col <= content_end then
+      -- Found the link under cursor, process the URL
+      local converted_url = vim.fn['knot#ConvertIdLink'](url)
+
+      if converted_url == '' then
+        -- Empty result, do nothing
+        return
+      elseif string.match(converted_url, '^https?://') then
+        -- It's a URL, open with xdg-open
+        vim.fn.system('xdg-open "' .. converted_url .. '"')
+        print('Opening URL: ' .. converted_url)
+      else
+        -- It's a relative path, handle anchors
+        local file_path = converted_url
+        local anchor = nil
+
+        -- Check for anchor (#something)
+        local anchor_pos = string.find(file_path, '#')
+        if anchor_pos then
+          anchor = string.sub(file_path, anchor_pos + 1)
+          file_path = string.sub(file_path, 1, anchor_pos - 1)
+        end
+
+        -- Open the file
+        vim.cmd('edit ' .. vim.fn.fnameescape(file_path))
+
+        -- if anchor then
+        -- TODO: Implement anchor seeking to find heading with this text
+        -- end
+        -- print('Opening file: ' .. file_path)
+      end
+      return
+    end
+
+    start_pos = content_end + 1
+  end
+
+  print 'No markdown link found under cursor'
+end
+
+-- Show Vim key notation for the next key pressed
+-- NOTE: Native Neovim methods to identify keys:
+--   1. In insert mode: <C-v> then press your key combination
+--   2. Command mode: :<C-v> then press your key combination  
+--   3. Check mappings: :map <key> or :verbose map <key>
+--   4. Help: :help key-notation or :help i_<key>
+function M.show_key_notation()
+  print('Press any key combination to see its Vim notation...')
+  local key = vim.fn.getchar()
+  local key_name = vim.fn.keytrans(vim.fn.nr2char(key))
+  print(string.format('Vim key notation: %s', key_name))
 end
 
 return M

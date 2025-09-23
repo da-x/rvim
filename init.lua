@@ -38,6 +38,9 @@ vim.o.breakindent = true
 -- Save undo history
 vim.o.undofile = true
 
+-- Remember cursor position, search history, etc.
+vim.o.shada = "'100,<50,s10,h,f1"
+
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.o.ignorecase = true
 vim.o.smartcase = true
@@ -175,14 +178,30 @@ vim.keymap.set('v', '<C-Down>', '}', { silent = true, desc = 'Move to next parag
 vim.keymap.set('n', '<Down>', 'gj', { desc = 'Move down by visual line' })
 vim.keymap.set('n', '<Up>', 'gk', { desc = 'Move up by visual line' })
 
+-- Bind M-T-PageUp to nop by default (can be overridden in specific contexts)
+vim.keymap.set('n', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('i', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
+
+-- local_vimrc
+
+vim.g.local_vimrc = { 'vimrc_local.vim' }
+vim.g.local_vimrc_look_only_in_dot_git = true
+vim.g.local_vimrc_enable = 1
+vim.g.local_vimrc_ask = 0
+
 -- Load utility functions
 local utils = require 'utils'
 
--- Source additional VimScript configuration
-vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
+-- Configure Python plugin loading from rplugin directory
+vim.g.python3_host_prog = vim.fn.exepath 'python3'
+local rplugin_path = vim.fn.stdpath 'config' .. '/rplugin'
+if vim.fn.isdirectory(rplugin_path) == 1 then
+  vim.opt.runtimepath:append(rplugin_path)
+end
 
 -- Keybinds to make split navigation easier.
 vim.keymap.set('n', '<leader>hi', utils.show_highlight_groups, { desc = 'Show [H]ighlight [I]nfo under cursor' })
+vim.keymap.set('n', '<leader>hk', utils.show_key_notation, { desc = 'Show [K]ey notation for next key pressed' })
 
 --  Use CTRL+<hjkl> to switch between windows
 --
@@ -209,6 +228,19 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
     vim.hl.on_yank()
+  end,
+})
+
+-- Remember cursor position
+vim.api.nvim_create_autocmd('BufReadPost', {
+  desc = 'Restore cursor position',
+  group = vim.api.nvim_create_augroup('restore-cursor', { clear = true }),
+  callback = function()
+    local mark = vim.api.nvim_buf_get_mark(0, '"')
+    local lcount = vim.api.nvim_buf_line_count(0)
+    if mark[1] > 0 and mark[1] <= lcount then
+      pcall(vim.api.nvim_win_set_cursor, 0, mark)
+    end
   end,
 })
 
@@ -857,9 +889,14 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev', 'knots' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          knots = {
+            name = 'Knots',
+            module = 'knots',
+            opts = {},
+          },
           buffer = {
             name = 'Buffer',
             module = 'blink.cmp.sources.buffer',
@@ -914,10 +951,20 @@ require('lazy').setup({
       vim.cmd.colorscheme 'tokyonight-night'
 
       -- Custom color overrides
-      vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
-      vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
-      -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
-      -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
+      local function apply_custom_colors()
+        vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
+        vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
+        -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
+        -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
+      end
+
+      apply_custom_colors()
+
+      -- Reapply colors after colorscheme changes
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        callback = apply_custom_colors,
+        desc = 'Reapply custom colors after colorscheme change',
+      })
     end,
   },
 
@@ -955,6 +1002,12 @@ require('lazy').setup({
       ---@diagnostic disable-next-line: duplicate-set-field
       statusline.section_location = function()
         return '%2l:%-2v'
+      end
+
+      -- Custom filename section using our VimScript function
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_filename = function()
+        return '%{%MyStatuslineRelativePath()%}'
       end
 
       -- ... and there is more!
@@ -1015,11 +1068,11 @@ require('lazy').setup({
     'da-x/vim-markdown',
     ft = 'markdown',
     config = function()
-      vim.g.vim_markdown_folding_disabled = 1
-      vim.g.vim_markdown_conceal = 0
-      vim.g.vim_markdown_frontmatter = 1
-      vim.g.vim_markdown_strikethrough = 1
-      vim.g.vim_markdown_new_list_item_indent = 2
+      -- Open links with Enter in markdown files
+      vim.keymap.set('n', '<CR>', 'gx', {
+        buffer = true,
+        desc = 'Open link under cursor',
+      })
     end,
   },
 
@@ -1038,6 +1091,7 @@ require('lazy').setup({
       if not vim.g.knots_config_script_path or vim.g.knots_config_script_path == '' then
         vim.g.knots_config_script_path = vim.fn.expand '~/.local/share/knots'
       end
+      require 'knots'
     end,
   },
 
@@ -1063,6 +1117,61 @@ require('lazy').setup({
       -- Preview window for files
       vim.g.fzf_preview_window = { 'right:50%', 'ctrl-/' }
     end,
+  },
+
+  { -- Automatically change to project root directory
+    'airblade/vim-rooter',
+    opts = {},
+    config = function()
+      vim.g.rooter_patterns = { '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/' }
+      vim.g.rooter_change_directory_for_non_project_files = 'current'
+      vim.g.rooter_silent_chdir = 1
+    end,
+  },
+
+  { -- Comprehensive Git integration
+    'tpope/vim-fugitive',
+    cmd = { 'Git', 'G', 'Gwrite', 'Gread', 'Gdiffsplit' },
+    keys = {
+      { '<leader>gs', '<cmd>Git<cr>', desc = 'Git status' },
+      { '<leader>gb', '<cmd>Git blame<cr>', desc = 'Git blame' },
+      { '<leader>gc', '<cmd>Git commit<cr>', desc = 'Git commit' },
+      { '<leader>gp', '<cmd>Git push<cr>', desc = 'Git push' },
+      { '<leader>gl', '<cmd>Git pull<cr>', desc = 'Git pull' },
+      { '<leader>gd', '<cmd>Gdiffsplit<cr>', desc = 'Git diff split' },
+    },
+  },
+
+  { -- Enhanced diff views
+    'sindrets/diffview.nvim',
+    cmd = { 'DiffviewOpen', 'DiffviewFileHistory', 'DiffviewClose' },
+    keys = {
+      { '<leader>gv', '<cmd>DiffviewOpen<cr>', desc = 'Diff view open' },
+      { '<leader>gh', '<cmd>DiffviewFileHistory<cr>', desc = 'File history' },
+      { '<leader>gx', '<cmd>DiffviewClose<cr>', desc = 'Close diff view' },
+    },
+    config = true,
+  },
+
+  { -- Magit-like Git interface for Neovim
+    'NeogitOrg/neogit',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'sindrets/diffview.nvim',
+      'nvim-telescope/telescope.nvim',
+    },
+    config = true,
+    keys = {
+      { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Neogit interface' },
+      { '<leader>gr', '<cmd>Neogit rebase<cr>', desc = 'Neogit rebase' },
+    },
+  },
+
+  { -- Local vimrc support for project-specific settings
+    'da-x/local_vimrc',
+    opts = {},
+    dependencies = { 'LucHermitte/lh-vim-lib' },
+    config = function() end,
   },
 
   { -- File explorer tree
@@ -1092,7 +1201,6 @@ require('lazy').setup({
       },
     },
     keys = {
-      { '<leader>e', '<cmd>NvimTreeToggle<CR>', desc = 'Toggle file explorer' },
       { '<F3>', '<cmd>NvimTreeFindFileToggle<CR>', desc = 'Find file in tree and toggle' },
       { '<C-F3>', '<cmd>NvimTreeToggle<CR>', desc = 'Toggle file explorer' },
     },
@@ -1138,21 +1246,16 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
-
-  { -- Local vimrc support for project-specific settings
-    'da-x/local_vimrc',
-    ops = {},
-    config = function()
-      -- Configure local_vimrc
-      vim.g.local_vimrc = { 'vimrc_lcoal.vim' }
-      vim.g.local_vimrc_look_only_in_dot_git = true
-      vim.g.local_vimrc_enable = 1
-      vim.g.local_vimrc_ask = 0
-    end,
-  },
 })
 
-require('lazy').load { plugins = { 'fzf.vim' } }
+require('lazy').load { plugins = {
+  'fzf.vim',
+  'local_vimrc',
+  'vim-rooter',
+} }
+
+-- Source additional VimScript configuration
+vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
 -- vim.lsp.config("rust_analyzer", {
 --   settings = {
