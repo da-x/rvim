@@ -118,141 +118,6 @@ function! GetSubstituteDelimiter() abort
   return g:substitute_delimiters[g:substitute_delimiter_index]
 endfunction
 
-function! OpenSubstituteBuffer(mode, with_match) abort
-  let l:delim = GetSubstituteDelimiter()
-  let l:search_pattern = @/
-  let l:replacement = a:with_match ? InsertSelectionMatch() : ''
-  
-  " Create the substitute command
-  if a:mode ==# 'visual'
-    let l:cmd = ':s' . l:delim . l:search_pattern . l:delim . l:replacement . l:delim . 'g'
-  else
-    let l:cmd = ':%s' . l:delim . l:search_pattern . l:delim . l:replacement . l:delim . 'g'
-  endif
-  
-  " Save current window info
-  let l:original_win = winnr()
-  let l:original_buf = bufnr('%')
-  
-  " Create buffer for floating window
-  let l:buf = nvim_create_buf(v:false, v:true)
-  
-  " Calculate dimensions and position for floating window
-  let l:width = min([80, &columns - 4])
-  let l:height = 3
-  let l:row = (&lines - l:height) / 2
-  let l:col = (&columns - l:width) / 2
-  
-  " Configure floating window
-  let l:opts = {
-    \ 'relative': 'editor',
-    \ 'width': l:width,
-    \ 'height': l:height,
-    \ 'row': l:row,
-    \ 'col': l:col,
-    \ 'style': 'minimal',
-    \ 'border': 'rounded',
-    \ 'title': ' Substitute Edit (Enter=Execute, Esc=Cancel) ',
-    \ 'title_pos': 'center'
-    \ }
-  
-  " Open floating window
-  let l:float_win = nvim_open_win(l:buf, v:true, l:opts)
-  
-  " Set buffer options
-  call nvim_buf_set_option(l:buf, 'buftype', 'nofile')
-  call nvim_buf_set_option(l:buf, 'swapfile', v:false)
-  call nvim_buf_set_option(l:buf, 'buflisted', v:false)
-  
-  " Set up custom syntax highlighting for substitute commands
-  call SetupSubstituteSyntax(l:delim)
-  
-  " Insert the command
-  call nvim_buf_set_lines(l:buf, 0, -1, v:false, [l:cmd])
-  
-  " Position cursor after replacement delimiter for editing
-  let l:cursor_pos = len(':s' . l:delim . l:search_pattern . l:delim) + 1
-  call nvim_win_set_cursor(l:float_win, [1, l:cursor_pos - 1])
-  
-  " Store info for execution
-  let b:substitute_original_win = l:original_win
-  let b:substitute_original_buf = l:original_buf
-  let b:substitute_mode = a:mode
-  let b:substitute_float_win = l:float_win
-  
-  " Key mappings for this buffer
-  nnoremap <buffer><silent> <CR> :call ExecuteSubstituteBuffer()<CR>
-  nnoremap <buffer><silent> <Esc> :call CancelSubstituteBuffer()<CR>
-  inoremap <buffer><silent> <CR> <Esc>:call ExecuteSubstituteBuffer()<CR>
-  inoremap <buffer><silent> <Esc> <Esc>:call CancelSubstituteBuffer()<CR>
-  
-  startinsert!
-endfunction
-
-function! ExecuteSubstituteBuffer() abort
-  let l:cmd = getline(1)
-  let l:original_win = b:substitute_original_win
-  let l:original_buf = b:substitute_original_buf
-  let l:mode = b:substitute_mode
-  let l:float_win = b:substitute_float_win
-  
-  " Close floating window
-  call nvim_win_close(l:float_win, v:true)
-  
-  " Return to original window
-  execute l:original_win . 'wincmd w'
-  
-  " Execute the command
-  try
-    if l:mode ==# 'visual'
-      " Re-select the visual range and execute
-      normal! gv
-      execute "'<,'>" . l:cmd[1:]  " Remove the : prefix
-    else
-      execute l:cmd
-    endif
-  catch /E486:/
-    echo "Pattern not found"
-  catch
-    echo "Error: " . v:exception
-  endtry
-endfunction
-
-function! CancelSubstituteBuffer() abort
-  let l:original_win = b:substitute_original_win
-  let l:float_win = b:substitute_float_win
-  call nvim_win_close(l:float_win, v:true)
-  execute l:original_win . 'wincmd w'
-endfunction
-
-function! SetupSubstituteSyntax(delimiter) abort
-  " Clear existing syntax
-  syntax clear
-  
-  " Escape the delimiter for use in regex patterns
-  let l:delim_escaped = escape(a:delimiter, '\^$.*~[]')
-  
-  " Define syntax regions for substitute command
-  " Match the command structure: :%s<delim>pattern<delim>replacement<delim>flags
-  execute 'syntax match SubstituteCommand "^:\?%\?s" contained'
-  execute 'syntax match SubstituteDelimiter "' . l:delim_escaped . '" contained'
-  execute 'syntax match SubstituteFlags "[igc]*$" contained'
-  
-  " Define regions for pattern and replacement
-  execute 'syntax region SubstitutePattern start="^:\?%\?s' . l:delim_escaped . '" end="' . l:delim_escaped . '" contained contains=SubstituteDelimiter oneline'
-  execute 'syntax region SubstituteReplacement start="' . l:delim_escaped . '" end="' . l:delim_escaped . '[igc]*$" contained contains=SubstituteDelimiter,SubstituteFlags oneline'
-  
-  " Main pattern that captures the entire substitute command
-  execute 'syntax region SubstituteLine start="^" end="$" contains=SubstituteCommand,SubstitutePattern,SubstituteReplacement,SubstituteFlags oneline'
-  
-  " Define highlighting colors
-  highlight link SubstituteCommand Keyword
-  highlight link SubstituteDelimiter Special
-  highlight link SubstitutePattern String
-  highlight link SubstituteReplacement Identifier
-  highlight link SubstituteFlags Type
-endfunction
-
 nnoremap <A-d> :call RotateSubstituteDelimiter()<CR>
 
 function! InsertSelectionMatch() abort
@@ -282,13 +147,13 @@ endfunction
 
 " Search and replace using the current search mark, either in a selection or
 " the entire buffer, and take the closest match as the replacement text to
-" edit. Opens in a syntax-highlighted buffer for better editing.
-nnoremap <silent> <A-r> :call OpenSubstituteBuffer('normal', 1)<CR>
-vnoremap <silent> <A-r> :call OpenSubstituteBuffer('visual', 1)<CR>
+" edit.
+nnoremap <A-r> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
+vnoremap <A-r> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
 
 " Same as above, but write a new string for replacement.
-nnoremap <silent> <A-n> :call OpenSubstituteBuffer('normal', 0)<CR>
-vnoremap <silent> <A-n> :call OpenSubstituteBuffer('visual', 0)<CR>
+nnoremap <A-n> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
+vnoremap <A-n> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
 
 " =============================================================================
 " Various editing stuff
