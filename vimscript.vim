@@ -39,10 +39,6 @@ endfunction
 command! -nargs=+ Gg call MyGitGrep(<q-args>)
 command! GgToggleRecursive call MyGitGrepToggleRecursive()
 
-nnoremap <F9> :Gg <c-r>=expand("<cword>")<CR><CR>
-nnoremap <C-F9> :Gg <c-r>=""<CR>
-nnoremap <tab><F9> :Rg <c-r>=expand("<cword>")<CR><CR>
-nnoremap <tab><C-F9> :Rg <c-r>=""<CR>
 
 " =============================================================================
 " Yanking to system clipboard various stuff
@@ -81,8 +77,6 @@ function! YankCurrentDirAbs() abort
   call SetSystemClipboard(expand("%:p:h"))
 endfunction
 
-noremap <silent> <leader>yf :call YankCurrentFilename()<CR>
-noremap <silent> <leader>yd :call YankCurrentDirAbs()<CR>
 
 augroup AutoSetSystemClipboard
   autocmd!
@@ -100,9 +94,6 @@ source <sfile>:h/gitutils.vim
 " Select the current cursor word and search it in the buffer, without
 " moving, unlike '*' and '#' which move. If there is a selection, it is
 " used instead.
-vmap <A-t> *``
-imap <A-t> <C-c>*``
-nmap <A-t> *``
 
 " Delimiter rotation for substitute commands
 let g:substitute_delimiters = ['/', '#', '|', '@', '!']
@@ -118,7 +109,6 @@ function! GetSubstituteDelimiter() abort
   return g:substitute_delimiters[g:substitute_delimiter_index]
 endfunction
 
-nnoremap <A-d> :call RotateSubstituteDelimiter()<CR>
 
 function! InsertSelectionMatch() abort
   " Finds the first match of the current search pattern (@/) and returns it
@@ -148,12 +138,6 @@ endfunction
 " Search and replace using the current search mark, either in a selection or
 " the entire buffer, and take the closest match as the replacement text to
 " edit.
-nnoremap <A-r> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
-vnoremap <A-r> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
-
-" Same as above, but write a new string for replacement.
-nnoremap <A-n> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
-vnoremap <A-n> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
 
 " =============================================================================
 " Various editing stuff
@@ -164,20 +148,21 @@ endfun
 
 command! -bar EditLocalVimrc call EditLocalVimrc()
 
+function! CondLinuxCodingStyle()
+  if &ft == "cpp" || &ft == 'c'
+    LinuxCodingStyle
+  endif
+endfunction
+
+command! CondLinuxCodingStyle call CondLinuxCodingStyle()
+
+
 " Mark '.orig' file buffers as read-only on open
 augroup MarkOrigReadonly
   autocmd!
   autocmd BufRead *.orig setlocal readonly
 augroup END
 
-nmap <leader>el :EditLocalVimrc<CR>
-nnoremap <leader>ea :e! ~/.config/alacritty/alacritty.yml<CR>
-nnoremap <leader>ee :e! ~/.config/rvim/init.lua<CR>
-nnoremap <leader>eg :e! ~/.files/gitconfig<CR>
-nnoremap <leader>et :e! ~/.tmux.conf<CR>
-nnoremap <leader>ez :e! ~/.zsh/zshrc.sh<CR>
-nnoremap <leader>e_ :e! ~/.vim_runtime/project-specific.vim<CR>
-nnoremap <leader>ef :ToggleFileExplorer<CR>
 
 " Removes trailing spaces
 function! TrimWhiteSpace() abort
@@ -204,18 +189,6 @@ function! SaveAllAndEatRedo() abort
   call EatRedo()
 endfunction
 
-noremap <silent> <F8>                 :call EatNext()<CR>
-noremap <silent> <M-F8>               :call SaveAllAndEatRedo()<CR>
-noremap <silent> <C-F8>               :call EatFirst()<CR>
-noremap <silent> <leader>o<Insert>    :call EatScan()<CR>
-noremap <silent> <leader>o<Home>      :call EatFirst()<CR>
-noremap <silent> <leader>ol           :call EatScan()<CR>
-noremap <silent> <leader>oo           :call SaveAllAndEatRedo()<CR>
-noremap <silent> <leader>o<Backspace> :call EatPrev()<CR>
-noremap <silent> <leader>o<Return>    :call EatNext()<CR>
-noremap <silent> <leader>o<space>     :call EatFirst()<CR>
-noremap <silent> <leader>o[           :call EatPrev()<CR>
-noremap <silent> <leader>o]           :call EatNext()<CR>
 
 " =============================================================================
 " Markdown
@@ -245,30 +218,6 @@ function! MyMarkdownSettings()
   " Custom highlight overrides for markdown based on :Inspect output
   call nvim_set_hl(0, '@markup.raw.markdown_inline', {'fg': '#9e64ff', 'bg': '#1a1a1a'})
 
-  map <buffer> <leader>e\ <A-e>d
-  noremap <buffer> <silent> gq :call MyMarkdownGQ()<CR>
-  imap <buffer> <A-e>d  <C-c><A-e>d
-
-  noremap <buffer> <silent> <A-e><CR>      :call MyMarkdownInsertBullet()<CR>
-  noremap <buffer> <silent> <C-CR>         :call MyMarkdownInsertBullet()<CR>
-  noremap <buffer> <silent> <leader><Down> :call MyMarkdownInsertBullet()<CR>
-
-  noremap <buffer> <silent> <A-e><Right> :call MyMarkdownInsertSubBullet()<CR>
-  noremap <buffer> <silent> <leader><Right> :call MyMarkdownInsertSubBullet()<CR>
-  nnoremap <buffer> <silent> <CR> <cmd>lua require('utils').open_markdown_link()<CR>
-  noremap <buffer> <C-del> :call MyMarkdownToggleComposeMode()<CR>
-  inoremap <buffer> <C-del> <C-c>:call MyMarkdownToggleComposeMode()<CR>
-  vnoremap <buffer> <silent> <leader>` :call MyMarkdownCodeBlockSelection()<CR>
-
-  inoremap <buffer> <A-e><Down>  Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>
-  inoremap <buffer> <A-e><CR>  <C-c>i<C-R>=MyVimEditTimestamp()<CR>
-  inoremap <buffer> <A-e>d      Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>
-  noremap <buffer> <A-e>d  Go<C-R>=MyVimEditInsertDateLine()<CR><CR>
-  noremap <buffer> <A-e><CR>  Go<C-R>=MyVimEditTimestamp()<CR>
-  nnoremap <silent> <buffer> <A-k>  :call MyMarkdownDragUp()<CR>
-  nnoremap <silent> <buffer> <A-j>  :call MyMarkdownDragDown()<CR>
-  vnoremap <silent> <buffer> <A-k>  :call MyMarkdownDragUp()<CR>
-  vnoremap <silent> <buffer> <A-j>  :call MyMarkdownDragDown()<CR>
 
   Indent4Spaces
   setl formatlistpat+=\\\|^\\s*\\*\\s*
@@ -332,30 +281,8 @@ function! InKnotBuffer()
 
   let b:Markdown_LinkFilter = function('knot#ConvertIdLink')
 
-  " Manipulation
-  nmap <buffer> <C-n>m              :call knot#MoveCurrentInteractive()<CR>
-  nmap <buffer> <C-n><Delete>       :call knot#DeleteCurrent()<CR>
-
-  "" Open URLs from current knot
-  nmap <silent> <buffer> <C-PageUp> :call knot#pickUrl()<CR>
-
-  " Navigation
-  "   C-h: Ctrl-Backspace
-  nmap <buffer>     <C-h> :call knot#goToBacklinks()<CR>
-  nmap <buffer>     <C-n><PageDown>  :call knot#Pick()<CR>
-  nmap <buffer>     <F3>             :call knot#Pick()<CR>
-  nmap <buffer>     <C-F1> :call knot#openReminder()<CR>
-
-  " Insertions or extractions
-  inoremap <buffer> <C-t>  <C-c>i<C-R>=MyVimEditTimestamp()<CR>
-  noremap <buffer>  <C-t>  G:call MarkdownInsertTimestamp()<CR>A
-  noremap <buffer>  <C-n>u :call knot#insertOpenedTabURL()<CR>
-  noremap <buffer>  <C-n><Up>  i<C-R>=knot#DateLink()<CR>
-  nnoremap <buffer> <leader>]  :call knot#InsertReminder()<CR>
-
-  xnoremap <buffer> <C-n><Insert> :<c-u>
-     \call knot#CarveCurrentInteractive()
-     \<CR>
+  " Setup key bindings using Lua command
+  SetupKnotBindings
 endfunction
 
 command! InKnotBuffer call InKnotBuffer()

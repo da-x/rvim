@@ -13,18 +13,6 @@ endfunction
 
 function! MyGitCommitHook() abort
   setlocal spell
-
-  " Quick save commit message and return
-  nnoremap <buffer> <C-g><CR> :w \| bd<CR>
-  imap <buffer> <C-g><CR> <C-c><C-g><CR>
-
-  " Abort commit (delete commit message file)
-  nnoremap <buffer> <C-q> :%delete \| w \| bd \| echo "Commit aborted - all files remain staged"<CR>
-  imap <buffer> <C-q> <C-c>:%delete \| w \| bd \| echo "Commit aborted - all files remain staged"<CR>
-
-  " In Neovim, M-PageUp=C-CR
-  nnoremap <buffer> <M-T-PageUp> :call EndCommitMessageEdit()<CR>
-  imap <buffer> <M-T-PageUp> <C-c>:call EndCommitMessageEdit()<CR>
   startinsert
 endfunction
 
@@ -36,19 +24,7 @@ endfunction
 " Git rebase functions
 
 function! MyGitRebaseTodoHook(...) abort
-  call setpos('.', [0, 1, 1, 0])
-  nnoremap <buffer> p 0ciwpick<ESC><Down>0
-  nnoremap <buffer> r 0ciwreword<ESC><Down>0
-  nnoremap <buffer> e 0ciwedit<ESC><Down>0
-  nnoremap <buffer> s 0ciwsquash<ESC><Down>0
-  nnoremap <buffer> f 0ciwfixup<ESC><Down>0
-  nnoremap <buffer> x 0ciwexec<ESC><Down>0
-  nnoremap <buffer> d 0ciwdrop<ESC><Down>0
-  nnoremap <buffer> k 0ciwdrop<ESC><Down>0
-  nmap <buffer> <C-Up> <M-k>
-  nmap <buffer> <C-Down> <M-j>
-  nmap <buffer> <M-PageUp> <M-k>
-  nmap <buffer> <M-PageDown> <M-j>
+  " Cursor positioning is now handled by the autocmd in init.lua
 endfunction
 
 augroup GitRebaseTodoRebinding autocmd!
