@@ -90,200 +90,70 @@ augroup AutoSetSystemClipboard
 augroup END
 
 " =============================================================================
-" Git 
+" Git utilities (functions moved to gitutils.vim)
+source <sfile>:h/gitutils.vim
 
 
-function EndCommitMessageEdit()
-  if len(getbufinfo({'buflisted':1})) == 1
-    wq!
-  else
-    w | bd
-  endif
+" =============================================================================
+" Search replace
+
+" Select the current cursor word and search it in the buffer, without
+" moving, unlike '*' and '#' which move. If there is a selection, it is
+" used instead.
+vmap <A-t> *``
+imap <A-t> <C-c>*``
+nmap <A-t> *``
+
+" Delimiter rotation for substitute commands
+let g:substitute_delimiters = ['/', '#', '|', '@', '!']
+let g:substitute_delimiter_index = 0
+
+function! RotateSubstituteDelimiter() abort
+  let g:substitute_delimiter_index = (g:substitute_delimiter_index + 1) % len(g:substitute_delimiters)
+  let l:delim = g:substitute_delimiters[g:substitute_delimiter_index]
+  echo 'Substitute delimiter: ' . l:delim
 endfunction
 
-function! MyGitCommitHook() abort
-  setlocal spell
-
-  " Quick save commit message and return
-  nnoremap <buffer> <C-g><CR> :w \| bd<CR>
-  imap <buffer> <C-g><CR> <C-c><C-g><CR>
-
-  " In Neovim, M-PageUp=C-CR
-  nnoremap <buffer> <M-T-PageUp> :call EndCommitMessageEdit()<CR>
-  imap <buffer> <M-T-PageUp> <C-c>:call EndCommitMessageEdit()<CR>
-  startinsert
+function! GetSubstituteDelimiter() abort
+  return g:substitute_delimiters[g:substitute_delimiter_index]
 endfunction
 
-function! MyGitAddAllAmend() abort
-  Git commit -a --amend
-endfunction
+nnoremap <A-d> :call RotateSubstituteDelimiter()<CR>
 
-function! MyGitRebaseTodoHook(...) abort
-  call setpos('.', [0, 1, 1, 0])
-  nnoremap <buffer> p 0ciwpick<ESC><Down>0
-  nnoremap <buffer> r 0ciwreword<ESC><Down>0
-  nnoremap <buffer> e 0ciwedit<ESC><Down>0
-  nnoremap <buffer> s 0ciwsquash<ESC><Down>0
-  nnoremap <buffer> f 0ciwfixup<ESC><Down>0
-  nnoremap <buffer> x 0ciwexec<ESC><Down>0
-  nnoremap <buffer> d 0ciwdrop<ESC><Down>0
-  nnoremap <buffer> k 0ciwdrop<ESC><Down>0
-  nmap <buffer> <C-Up> <M-k>
-  nmap <buffer> <C-Down> <M-j>
-  nmap <buffer> <M-PageUp> <M-k>
-  nmap <buffer> <M-PageDown> <M-j>
-endfunction
+function! InsertSelectionMatch() abort
+  " Finds the first match of the current search pattern (@/) and returns it
+  " as escaped text for use in substitute commands. This enables pre-filling
+  " replacement fields with the actual matched text for editing.
+  "
+  " Returns: Escaped string containing the matched text, or the original
+  "          search pattern if no match found or match spans multiple lines
+  let l:save_pos = getpos('.')
+  let l:search_mark = @/
+  let l:res = l:search_mark
+  let [l:lnum, l:col] = searchpos(@/, 'cw')
 
-augroup GitRebaseTodoRebinding autocmd!
-  autocmd! BufRead git-rebase-todo call MyGitRebaseTodoHook()
-augroup END
-
-function! s:rebase_interactive_sink(single_item)
-  echomsg a:single_item
-  if len(a:single_item) >= 2
-    let l:line = a:single_item[1]
-    " Extract commit hash from git log --oneline format: "hash message"
-    let l:parts = split(l:line, ' ')
-    if len(l:parts) > 0
-      let l:commit_hash = l:parts[0]
-      execute "Git rebase -i " l:commit_hash
+  if l:lnum !=# 0
+    let [l:lnum_end, l:col_end] = searchpos(@/, 'ce')
+    if l:lnum ==# l:lnum_end
+      let l:res = escape(strpart(getline(l:lnum), l:col - 1, l:col_end - l:col + 1), ' /&')
     else
-      echo "Could not parse commit hash"
+      " Not supported yet
     endif
-  else
-    echo "No commit selected"
   endif
+
+  call setpos('.', l:save_pos)
+  return l:res
 endfunction
 
-function! MyFZFChooseRebaseInteractive()
-  " Show only commits in current branch
-  let l:branch = system('git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null')
-  let l:branch = substitute(l:branch, '\n', '', 'g')
-  
-  if empty(l:branch)
-    echo "Not in a git repository or no commits"
-    return
-  endif
-  
-  " Use git log for current branch only
-  let l:git_cmd = 'git log --oneline --decorate --color=always ' . shellescape(l:branch)
-  
-  call fzf#vim#commits({
-  \  'source': l:git_cmd,
-  \  'sink*': function('s:rebase_interactive_sink'),
-  \})
-endfunction
+" Search and replace using the current search mark, either in a selection or
+" the entire buffer, and take the closest match as the replacement text to
+" edit.
+nnoremap <A-r> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
+vnoremap <A-r> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=InsertSelectionMatch()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
 
-let s:my_fzf_git_diff_hunk_program = expand('<sfile>:p:h')."/bin/fzf-git-diff-hunk-preview"
-
-function! MyFZFDiffHunks(cmd,...) abort
-  let l:screen = get(a:, 1, 'half')
-  let l:matches = []
-  let l:filename = ''
-  let l:filename_color = "\x1b[38;2;155;255;155m"
-  let l:white = "\x1b[38;2;255;255;255m"
-  let l:lnum_color = "\x1b[38;2;77;127;77m"
-  let l:grey = "\x1b[38;2;255;255;155m"
-
-  let l:hunknum = 1
-  let l:found_change_start = 0
-  for l:line in systemlist("git diff " . a:cmd . " | grep -E '^(diff|@@)' -A 4")
-    let l:m = matchlist(l:line, '\V\^diff --git a/\(\.\*\) b/\(\.\*\)')
-    if len(l:m) != 0
-      let l:filename = l:m[2]
-      let l:hunknum = 1
-      continue
-    endif
-    let l:m = matchlist(l:line, '\V\^@@ -\[^ ]\+ +\(\[0-9]\+\)\[ ,]\[^@]\*@@\(\.\*\)')
-    if len(l:m) != 0
-      let l:found_change_start = 0
-      let l:line_num = l:m[1]
-      let l:title = l:m[2]
-      call add(l:matches, [l:hunknum, l:filename, l:line_num, l:title])
-      let l:hunknum += 1
-      continue
-    endif
-    if l:found_change_start == 0
-      let l:m = matchlist(l:line, '\V\^\[+-]')
-      if len(l:m) != 0
-        let l:found_change_start = 1
-      else
-        if len(l:matches) >= 1
-          let l:matches[len(l:matches) - 1][2] += 1
-        endif
-      endif
-    endif
-  endfor
-
-  let l:i = 0
-  while l:i < len(l:matches)
-    let [l:hunknum, l:filename, l:line_num, l:title] = l:matches[l:i]
-    let l:matches[i] =
-        \ printf("%3d " . l:filename_color . "%s"
-        \ . l:white. ":" . l:lnum_color. "%d"
-        \ . l:white. " %s",
-        \ l:hunknum,
-        \ l:filename,
-        \ l:line_num,
-        \ l:title)
-    let l:i = l:i + 1
-  endwhile
-
-  if len(l:matches) == 0
-    if l:screen == 'full'
-      execute "normal! :x\<CR>"
-    endif
-    return
-  endif
-
-  let l:options = [
-      \"--ansi", "-e", "--no-sort", "--tac",
-      \"--preview-window", "down:70%:noborder",
-      \"--preview", s:my_fzf_git_diff_hunk_program." '".a:cmd."' {}"
-      \]
-
-  if l:screen == 'full'
-    let l:down = "100%"
-  else
-    let l:down = "50%"
-  endif
-
-  let l:opts = {}
-  function! l:opts.sink(single)
-    if len(a:single) == 1
-      let l:m = matchlist(a:single[0], '\V\^ \*\(\[0-9]\*\) \(\[^:]\*\):\(\[0-9]\*\)')
-      if len(l:m) != 0
-        execute "edit" l:m[2]
-        call setpos(".", [0, str2nr(l:m[3]), 0, 0])
-      endif
-    endif
-  endfunction
-
-  let l:v = fzf#run(fzf#wrap({
-              \ 'source': l:matches,
-              \ 'down': l:down,
-              \ 'sink*': remove(opts, 'sink'),
-              \ 'options': l:options,
-              \ }))
-endfunction
-
-" History of the current buffer's file
-nnoremap <C-g>L     :BCommits<CR>
-nnoremap <C-g>AA    :call MyGitAddAllAmend()<CR>
-
-" Various diff ways
-nnoremap <C-g>d     :call MyFZFDiffHunks('')<CR>
-nnoremap <C-g><C-d> :call MyFZFDiffHunks('')<CR>
-nnoremap <C-g>D     :call MyFZFDiffHunks('HEAD')<CR>
-nnoremap <C-g>C     :call MyFZFDiffHunks('--cached')<CR>
-nnoremap <C-g>j     :call MyFZFDiffHunks('HEAD~1')<CR>
-nnoremap <C-g><C-j> :call MyFZFDiffHunks('HEAD~1')<CR>
-nnoremap <C-g>i     :call MyFZFChooseRebaseInteractive()<CR>
-
-augroup GitCommitAutocmds
-  autocmd!
-  autocmd! FileType gitcommit call MyGitCommitHook()
-augroup END
+" Same as above, but write a new string for replacement.
+nnoremap <A-n> :%s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
+vnoremap <A-n> :s<C-r>=GetSubstituteDelimiter()<CR><C-r>=@/<CR><C-r>=GetSubstituteDelimiter()<CR><C-r>=GetSubstituteDelimiter()<CR>g<left><left>
 
 " =============================================================================
 " Various editing stuff

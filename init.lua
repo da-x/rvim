@@ -123,18 +123,49 @@ vim.keymap.set('n', '<leader>d', 'yyp', { desc = 'Duplicate current line' })
 vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
 vim.keymap.set('n', '<C-x><C-s>', '<cmd>w<CR>', { desc = 'Save current file' })
 
--- Git hunk deletion with Ctrl-g Delete
+-- Git bindings (C-g prefix) - comprehensive git workflow shortcuts
+vim.keymap.set('n', '<C-g>s', '<cmd>Git<CR>', { desc = 'Git status (stage with s, unstage with u)' })
+vim.keymap.set('n', '<C-g>L', '<cmd>BCommits<CR>', { desc = 'File history (commits affecting current buffer)' })
+vim.keymap.set('n', '<C-g>AA', function()
+  vim.fn.MyGitAddAllAmend()
+end, { desc = 'Add all changes and amend last commit' })
+
+-- Git hunk operations
+vim.keymap.set('n', '<C-g><Insert>', function()
+  require('gitsigns').stage_hunk()
+end, { desc = 'Stage Git hunk under cursor' })
 vim.keymap.set('n', '<C-g><Del>', function()
   require('gitsigns').reset_hunk()
 end, { desc = 'Reset Git hunk under cursor' })
-
--- Git hunk navigation with Ctrl-g Down/Up
 vim.keymap.set('n', '<C-g><Up>', function()
   require('gitsigns').nav_hunk 'prev'
-end, { desc = 'Go to next Git hunk' })
+end, { desc = 'Go to previous Git hunk' })
 vim.keymap.set('n', '<C-g><Down>', function()
   require('gitsigns').nav_hunk 'next'
 end, { desc = 'Go to next Git hunk' })
+
+-- Git diff views
+vim.keymap.set('n', '<C-g>d', function()
+  vim.fn.MyFZFDiffHunks ''
+end, { desc = 'Working directory changes (unstaged)' })
+vim.keymap.set('n', '<C-g><C-d>', function()
+  vim.fn.MyFZFDiffHunks ''
+end, { desc = 'Working directory changes (unstaged)' })
+vim.keymap.set('n', '<C-g>D', function()
+  vim.fn.MyFZFDiffHunks 'HEAD'
+end, { desc = 'Changes vs HEAD (all changes)' })
+vim.keymap.set('n', '<C-g>C', function()
+  vim.fn.MyFZFDiffHunks '--cached'
+end, { desc = 'Staged changes (--cached)' })
+vim.keymap.set('n', '<C-g>j', function()
+  vim.fn.MyFZFDiffHunks 'HEAD~1'
+end, { desc = 'Changes vs previous commit (HEAD~1)' })
+vim.keymap.set('n', '<C-g><C-j>', function()
+  vim.fn.MyFZFDiffHunks 'HEAD~1'
+end, { desc = 'Changes vs previous commit (HEAD~1)' })
+vim.keymap.set('n', '<C-g>i', function()
+  vim.fn.MyFZFChooseRebaseInteractive()
+end, { desc = 'Interactive rebase (choose commit via FZF)' })
 
 -- Toggle comments with Ctrl-r
 vim.keymap.set('n', '<C-r>', 'gcc', { desc = 'Toggle comment on current line', remap = true })
