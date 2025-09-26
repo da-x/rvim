@@ -1497,6 +1497,75 @@ require('lazy').setup({
     end,
   },
 
+  { -- Custom linting with nvim-lint
+    'mfussenegger/nvim-lint',
+    event = { 'BufReadPost', 'BufNewFile', 'BufWritePost' },
+    config = function()
+      local lint = require('lint')
+      
+      -- Custom Python-based GCC linter
+      lint.linters.gcc_python = {
+        name = 'gcc_python',
+        cmd = vim.fn.stdpath('config') .. '/bin/gcc_linter.py',
+        stdin = false,
+        args = {},
+        append_fname = true,
+        stream = 'stdout',
+        ignore_exitcode = true,
+        parser = function(output, bufnr)
+          local diagnostics = {}
+          
+          if output == "" or output == nil then
+            return diagnostics
+          end
+          
+          local ok, decoded = pcall(vim.json.decode, output)
+          if not ok or not decoded or type(decoded) ~= 'table' then
+            return diagnostics
+          end
+          
+          for _, item in ipairs(decoded) do
+            local severity_map = {
+              error = vim.diagnostic.severity.ERROR,
+              warning = vim.diagnostic.severity.WARN,
+              note = vim.diagnostic.severity.INFO
+            }
+            
+            table.insert(diagnostics, {
+              lnum = (item.line or 1) - 1,
+              col = (item.column or 1) - 1, 
+              severity = severity_map[item.severity] or vim.diagnostic.severity.ERROR,
+              message = item.message or '',
+              source = 'gcc_python',
+            })
+          end
+          
+          return diagnostics
+        end,
+      }
+      
+      -- Configure linters by filetype
+      lint.linters_by_ft = {
+        c = { 'gcc_python' },
+        cpp = { 'gcc_python' },
+      }
+      
+      -- Auto-lint on these events
+      local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+        group = lint_augroup,
+        callback = function()
+          lint.try_lint()
+        end,
+      })
+      
+      -- Manual command to test linting
+      vim.api.nvim_create_user_command('TestLint', function()
+        lint.try_lint('gcc_python')
+      end, { desc = 'Test GCC linter manually' })
+    end,
+  },
+
   { -- File explorer tree
     'nvim-tree/nvim-tree.lua',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
