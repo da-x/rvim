@@ -242,6 +242,10 @@ function! MyVimEditTimestamp() abort
   return "__".strftime("%Y-%m-%d %H:%M:%S")."__: "
 endfunction
 
+function! MyVimEditInsertDateLine() abort
+  return strftime("# At %Y-%m-%d %H:%M:%S\n")
+endfunction
+
 function! MyStatuslineRelativePath() abort
   if !get(b:, 'knotIdResolved', v:false)
     let b:knotId = knot#currentFullID()

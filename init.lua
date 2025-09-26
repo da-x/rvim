@@ -144,13 +144,21 @@ vim.keymap.set('n', '<C-g><Down>', function()
   require('gitsigns').nav_hunk 'next'
 end, { desc = 'Go to next Git hunk' })
 
+-- Git conflict marker navigation and resolution
+vim.keymap.set('n', '<C-g>b', '<Plug>(conflict-marker-next-hunk)', { desc = 'Next conflict marker' })
+vim.keymap.set('n', '<C-g>t', '<Plug>(conflict-marker-prev-hunk)', { desc = 'Previous conflict marker' })
+vim.keymap.set('n', '<C-g>q<Del>', '<Plug>(conflict-marker-none)', { desc = 'Choose none (remove conflict)' })
+vim.keymap.set('n', '<C-g>q<Down>', '<Plug>(conflict-marker-themselves)', { desc = 'Choose theirs' })
+vim.keymap.set('n', '<C-g>q<Up>', '<Plug>(conflict-marker-ourselves)', { desc = 'Choose ours' })
+vim.keymap.set('n', '<C-g>q<CR>', '<Plug>(conflict-marker-both)', { desc = 'Choose both' })
+
 -- Git grep bindings (F9 family)
 vim.keymap.set('n', '<F9>', function()
-  vim.fn.MyGitGrep(vim.fn.expand('<cword>'))
+  vim.fn.MyGitGrep(vim.fn.expand '<cword>')
 end, { desc = 'Git grep current word' })
 vim.keymap.set('n', '<C-F9>', ':Gg ', { desc = 'Git grep prompt' })
 vim.keymap.set('n', '<Tab><F9>', function()
-  require('telescope.builtin').live_grep { default_text = vim.fn.expand('<cword>') }
+  require('telescope.builtin').live_grep { default_text = vim.fn.expand '<cword>' }
 end, { desc = 'Ripgrep current word' })
 vim.keymap.set('n', '<Tab><C-F9>', function()
   require('telescope.builtin').live_grep()
@@ -211,26 +219,26 @@ end, { desc = 'Rotate substitute delimiter' })
 -- Advanced search and replace with current search pattern
 vim.keymap.set('n', '<A-r>', function()
   local delim = vim.fn.GetSubstituteDelimiter()
-  local pattern = vim.fn.getreg('/')
+  local pattern = vim.fn.getreg '/'
   local replacement = vim.fn.InsertSelectionMatch()
   return ':%s' .. delim .. pattern .. delim .. replacement .. delim .. 'g' .. string.rep('<Left>', 2)
 end, { desc = 'Search/replace with matched text as replacement', expr = true })
 vim.keymap.set('v', '<A-r>', function()
   local delim = vim.fn.GetSubstituteDelimiter()
-  local pattern = vim.fn.getreg('/')
+  local pattern = vim.fn.getreg '/'
   local replacement = vim.fn.InsertSelectionMatch()
   return ':s' .. delim .. pattern .. delim .. replacement .. delim .. 'g' .. string.rep('<Left>', 2)
 end, { desc = 'Search/replace with matched text as replacement', expr = true })
 
--- Search and replace with empty replacement  
+-- Search and replace with empty replacement
 vim.keymap.set('n', '<A-n>', function()
   local delim = vim.fn.GetSubstituteDelimiter()
-  local pattern = vim.fn.getreg('/')
+  local pattern = vim.fn.getreg '/'
   return ':%s' .. delim .. pattern .. delim .. delim .. 'g' .. string.rep('<Left>', 2)
 end, { desc = 'Search/replace with empty replacement', expr = true })
 vim.keymap.set('v', '<A-n>', function()
   local delim = vim.fn.GetSubstituteDelimiter()
-  local pattern = vim.fn.getreg('/')
+  local pattern = vim.fn.getreg '/'
   return ':s' .. delim .. pattern .. delim .. delim .. 'g' .. string.rep('<Left>', 2)
 end, { desc = 'Search/replace with empty replacement', expr = true })
 
@@ -388,33 +396,41 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('git-commit-bindings', { clear = true }),
   callback = function(ev)
     local opts = { buffer = ev.buf }
-    
+
     -- Quick save commit message and return
     vim.keymap.set('n', '<C-g><CR>', '<cmd>w | bd<cr>', vim.tbl_extend('force', opts, { desc = 'Save commit and close' }))
     vim.keymap.set('i', '<C-g><CR>', '<C-c><C-g><CR>', vim.tbl_extend('force', opts, { desc = 'Save commit and close' }))
-    
+
     -- Abort commit (delete commit message file)
-    vim.keymap.set('n', '<C-q>', '<cmd>%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>', 
-      vim.tbl_extend('force', opts, { desc = 'Abort commit' }))
-    vim.keymap.set('i', '<C-q>', '<C-c>:%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>', 
-      vim.tbl_extend('force', opts, { desc = 'Abort commit' }))
-    
+    vim.keymap.set(
+      'n',
+      '<C-q>',
+      '<cmd>%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>',
+      vim.tbl_extend('force', opts, { desc = 'Abort commit' })
+    )
+    vim.keymap.set(
+      'i',
+      '<C-q>',
+      '<C-c>:%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>',
+      vim.tbl_extend('force', opts, { desc = 'Abort commit' })
+    )
+
     -- Alternative save and close
-    vim.keymap.set('n', '<M-T-PageUp>', function() vim.fn.EndCommitMessageEdit() end, 
-      vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
-    vim.keymap.set('i', '<M-T-PageUp>', '<C-c><cmd>lua vim.fn.EndCommitMessageEdit()<cr>', 
-      vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
+    vim.keymap.set('n', '<M-T-PageUp>', function()
+      vim.fn.EndCommitMessageEdit()
+    end, vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
+    vim.keymap.set('i', '<M-T-PageUp>', '<C-c><cmd>lua vim.fn.EndCommitMessageEdit()<cr>', vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
   end,
 })
 
--- Git rebase todo buffer mappings  
+-- Git rebase todo buffer mappings
 vim.api.nvim_create_autocmd('BufRead', {
   pattern = 'git-rebase-todo',
   desc = 'Setup git rebase todo key bindings',
   group = vim.api.nvim_create_augroup('git-rebase-bindings', { clear = true }),
   callback = function(ev)
     local opts = { buffer = ev.buf }
-    
+
     -- Rebase action shortcuts
     vim.keymap.set('n', 'p', '0ciwpick<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to pick' }))
     vim.keymap.set('n', 'r', '0ciwreword<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to reword' }))
@@ -424,15 +440,15 @@ vim.api.nvim_create_autocmd('BufRead', {
     vim.keymap.set('n', 'x', '0ciwexec<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to exec' }))
     vim.keymap.set('n', 'd', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
     vim.keymap.set('n', 'k', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
-    
+
     -- Movement shortcuts
     vim.keymap.set('n', '<C-Up>', '<M-k>', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
     vim.keymap.set('n', '<C-Down>', '<M-j>', vim.tbl_extend('force', opts, { desc = 'Move line down' }))
     vim.keymap.set('n', '<M-PageUp>', '<M-k>', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
     vim.keymap.set('n', '<M-PageDown>', '<M-j>', vim.tbl_extend('force', opts, { desc = 'Move line down' }))
-    
+
     -- Set cursor to first line
-    vim.fn.setpos('.', {0, 1, 1, 0})
+    vim.fn.setpos('.', { 0, 1, 1, 0 })
   end,
 })
 
@@ -443,58 +459,70 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('markdown-bindings', { clear = true }),
   callback = function(ev)
     local opts = { buffer = ev.buf }
-    
+
     -- Markdown-specific shortcuts
     vim.keymap.set('n', '<leader>e\\', '<A-e>d', vim.tbl_extend('force', opts, { desc = 'Insert markdown date' }))
-    vim.keymap.set('n', 'gq', function() vim.fn.MyMarkdownGQ() end, 
-      vim.tbl_extend('force', opts, { desc = 'Format markdown paragraph' }))
+    vim.keymap.set('n', 'gq', function()
+      vim.fn.MyMarkdownGQ()
+    end, vim.tbl_extend('force', opts, { desc = 'Format markdown paragraph' }))
     vim.keymap.set('i', '<A-e>d', '<C-c><A-e>d', vim.tbl_extend('force', opts, { desc = 'Insert markdown date' }))
-    
+
     -- Bullet point operations
-    vim.keymap.set('n', '<A-e><CR>', function() vim.fn.MyMarkdownInsertBullet() end, 
-      vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<C-CR>', function() vim.fn.MyMarkdownInsertBullet() end, 
-      vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<leader><Down>', function() vim.fn.MyMarkdownInsertBullet() end, 
-      vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<A-e><Right>', function() vim.fn.MyMarkdownInsertSubBullet() end, 
-      vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
-    vim.keymap.set('n', '<leader><Right>', function() vim.fn.MyMarkdownInsertSubBullet() end, 
-      vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
-    
+    vim.keymap.set('n', '<A-e><CR>', function()
+      vim.fn.MyMarkdownInsertBullet()
+    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
+    vim.keymap.set('n', '<C-CR>', function()
+      vim.fn.MyMarkdownInsertBullet()
+    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
+    vim.keymap.set('n', '<leader><Down>', function()
+      vim.fn.MyMarkdownInsertBullet()
+    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
+    vim.keymap.set('n', '<A-e><Right>', function()
+      vim.fn.MyMarkdownInsertSubBullet()
+    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
+    vim.keymap.set('n', '<leader><Right>', function()
+      vim.fn.MyMarkdownInsertSubBullet()
+    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
+
     -- Link handling
-    vim.keymap.set('n', '<CR>', function() require('utils').open_markdown_link() end, 
-      vim.tbl_extend('force', opts, { desc = 'Open markdown link under cursor' }))
-    vim.keymap.set('n', '<C-Del>', function() vim.fn.MyMarkdownToggleComposeMode() end, 
-      vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' }))
-    vim.keymap.set('i', '<C-Del>', '<C-c><cmd>lua vim.fn.MyMarkdownToggleComposeMode()<cr>', 
-      vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' }))
-    
+    vim.keymap.set('n', '<CR>', function()
+      require('utils').open_markdown_link()
+    end, vim.tbl_extend('force', opts, { desc = 'Open markdown link under cursor' }))
+    vim.keymap.set('n', '<C-Del>', function()
+      vim.fn.MyMarkdownToggleComposeMode()
+    end, vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' }))
+    vim.keymap.set(
+      'i',
+      '<C-Del>',
+      '<C-c><cmd>lua vim.fn.MyMarkdownToggleComposeMode()<cr>',
+      vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' })
+    )
+
     -- Code block selection
-    vim.keymap.set('v', '<leader>`', function() vim.fn.MyMarkdownCodeBlockSelection() end, 
-      vim.tbl_extend('force', opts, { desc = 'Wrap selection in code block' }))
-    
+    vim.keymap.set('v', '<leader>`', function()
+      vim.fn.MyMarkdownCodeBlockSelection()
+    end, vim.tbl_extend('force', opts, { desc = 'Wrap selection in code block' }))
+
     -- Date and timestamp insertions
-    vim.keymap.set('i', '<A-e><Down>', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', 
-      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
-    vim.keymap.set('i', '<A-e><CR>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', 
-      vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
-    vim.keymap.set('i', '<A-e>d', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', 
-      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
-    vim.keymap.set('n', '<A-e>d', 'Go<C-R>=MyVimEditInsertDateLine()<CR><CR>', 
-      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
-    vim.keymap.set('n', '<A-e><CR>', 'Go<C-R>=MyVimEditTimestamp()<CR>', 
-      vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
-    
+    vim.keymap.set('i', '<A-e><Down>', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
+    vim.keymap.set('i', '<A-e><CR>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
+    vim.keymap.set('i', '<A-e>d', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
+    vim.keymap.set('n', '<A-e>d', 'Go<C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
+    vim.keymap.set('n', '<A-e><CR>', 'Go<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
+
     -- Drag lines up/down
-    vim.keymap.set('n', '<A-k>', function() vim.fn.MyMarkdownDragUp() end, 
-      vim.tbl_extend('force', opts, { desc = 'Move line up' }))
-    vim.keymap.set('n', '<A-j>', function() vim.fn.MyMarkdownDragDown() end, 
-      vim.tbl_extend('force', opts, { desc = 'Move line down' }))
-    vim.keymap.set('v', '<A-k>', function() vim.fn.MyMarkdownDragUp() end, 
-      vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
-    vim.keymap.set('v', '<A-j>', function() vim.fn.MyMarkdownDragDown() end, 
-      vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
+    vim.keymap.set('n', '<A-k>', function()
+      vim.fn.MyMarkdownDragUp()
+    end, vim.tbl_extend('force', opts, { desc = 'Move line up' }))
+    vim.keymap.set('n', '<A-j>', function()
+      vim.fn.MyMarkdownDragDown()
+    end, vim.tbl_extend('force', opts, { desc = 'Move line down' }))
+    vim.keymap.set('v', '<A-k>', function()
+      vim.fn.MyMarkdownDragUp()
+    end, vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
+    vim.keymap.set('v', '<A-j>', function()
+      vim.fn.MyMarkdownDragDown()
+    end, vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
   end,
 })
 
@@ -502,42 +530,47 @@ vim.api.nvim_create_autocmd('FileType', {
 -- This will be triggered by the InKnotBuffer function
 vim.api.nvim_create_user_command('SetupKnotBindings', function()
   local opts = { buffer = 0 }
-  
+
   -- Knot manipulation
-  vim.keymap.set('n', '<C-n>m', function() vim.fn['knot#MoveCurrentInteractive']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Move current knot' }))
-  vim.keymap.set('n', '<C-n><Del>', function() vim.fn['knot#DeleteCurrent']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Delete current knot' }))
-  
+  vim.keymap.set('n', '<C-n>m', function()
+    vim.fn['knot#MoveCurrentInteractive']()
+  end, vim.tbl_extend('force', opts, { desc = 'Move current knot' }))
+  vim.keymap.set('n', '<C-n><Del>', function()
+    vim.fn['knot#DeleteCurrent']()
+  end, vim.tbl_extend('force', opts, { desc = 'Delete current knot' }))
+
   -- URL operations
-  vim.keymap.set('n', '<C-PageUp>', function() vim.fn['knot#pickUrl']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Pick URL from current knot' }))
-  
+  vim.keymap.set('n', '<C-PageUp>', function()
+    vim.fn['knot#pickUrl']()
+  end, vim.tbl_extend('force', opts, { desc = 'Pick URL from current knot' }))
+
   -- Navigation
-  vim.keymap.set('n', '<C-h>', function() vim.fn['knot#goToBacklinks']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
-  vim.keymap.set('n', '<C-n><PageDown>', function() vim.fn['knot#Pick']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
-  vim.keymap.set('n', '<F3>', function() vim.fn['knot#Pick']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
-  vim.keymap.set('n', '<C-F1>', function() vim.fn['knot#openReminder']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Open reminder' }))
-  
+  vim.keymap.set('n', '<C-h>', function()
+    vim.fn['knot#goToBacklinks']()
+  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
+  vim.keymap.set('n', '<C-n><PageDown>', function()
+    vim.fn['knot#Pick']()
+  end, vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
+  vim.keymap.set('n', '<F3>', function()
+    vim.fn['knot#Pick']()
+  end, vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
+  vim.keymap.set('n', '<C-F1>', function()
+    vim.fn['knot#openReminder']()
+  end, vim.tbl_extend('force', opts, { desc = 'Open reminder' }))
+
   -- Insertions and extractions
-  vim.keymap.set('i', '<C-t>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', 
-    vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
-  vim.keymap.set('n', '<C-t>', 'G<cmd>lua MarkdownInsertTimestamp()<cr>A', 
-    vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
-  vim.keymap.set('n', '<C-n>u', function() vim.fn['knot#insertOpenedTabURL']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Insert opened tab URL' }))
-  vim.keymap.set('n', '<C-n><Up>', 'i<C-R>=knot#DateLink()<CR>', 
-    vim.tbl_extend('force', opts, { desc = 'Insert date link' }))
-  vim.keymap.set('n', '<leader>]', function() vim.fn['knot#InsertReminder']() end, 
-    vim.tbl_extend('force', opts, { desc = 'Insert reminder' }))
-  
+  vim.keymap.set('i', '<C-t>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
+  vim.keymap.set('n', '<C-t>', 'G<cmd>lua MarkdownInsertTimestamp()<cr>A', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
+  vim.keymap.set('n', '<C-n>u', function()
+    vim.fn['knot#insertOpenedTabURL']()
+  end, vim.tbl_extend('force', opts, { desc = 'Insert opened tab URL' }))
+  vim.keymap.set('n', '<C-n><Up>', 'i<C-R>=knot#DateLink()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert date link' }))
+  vim.keymap.set('n', '<leader>]', function()
+    vim.fn['knot#InsertReminder']()
+  end, vim.tbl_extend('force', opts, { desc = 'Insert reminder' }))
+
   -- Carve operation
-  vim.keymap.set('x', '<C-n><Insert>', ':<c-u>call knot#CarveCurrentInteractive()<CR>', 
-    vim.tbl_extend('force', opts, { desc = 'Carve current selection' }))
+  vim.keymap.set('x', '<C-n><Insert>', ':<c-u>call knot#CarveCurrentInteractive()<CR>', vim.tbl_extend('force', opts, { desc = 'Carve current selection' }))
 end, { desc = 'Setup Knot buffer bindings' })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -1459,6 +1492,11 @@ require('lazy').setup({
     config = true,
   },
 
+  { -- Git conflict marker resolution
+    'rhysd/conflict-marker.vim',
+    lazy = false,
+  },
+
   { -- Magit-like Git interface for Neovim
     'NeogitOrg/neogit',
     dependencies = {
@@ -1501,12 +1539,12 @@ require('lazy').setup({
     'mfussenegger/nvim-lint',
     event = { 'BufReadPost', 'BufNewFile', 'BufWritePost' },
     config = function()
-      local lint = require('lint')
-      
+      local lint = require 'lint'
+
       -- Custom Python-based GCC linter
       lint.linters.gcc_python = {
         name = 'gcc_python',
-        cmd = vim.fn.stdpath('config') .. '/bin/gcc_linter.py',
+        cmd = vim.fn.stdpath 'config' .. '/bin/gcc_linter.py',
         stdin = false,
         args = {},
         append_fname = true,
@@ -1514,42 +1552,42 @@ require('lazy').setup({
         ignore_exitcode = true,
         parser = function(output, bufnr)
           local diagnostics = {}
-          
-          if output == "" or output == nil then
+
+          if output == '' or output == nil then
             return diagnostics
           end
-          
+
           local ok, decoded = pcall(vim.json.decode, output)
           if not ok or not decoded or type(decoded) ~= 'table' then
             return diagnostics
           end
-          
+
           for _, item in ipairs(decoded) do
             local severity_map = {
               error = vim.diagnostic.severity.ERROR,
               warning = vim.diagnostic.severity.WARN,
-              note = vim.diagnostic.severity.INFO
+              note = vim.diagnostic.severity.INFO,
             }
-            
+
             table.insert(diagnostics, {
               lnum = (item.line or 1) - 1,
-              col = (item.column or 1) - 1, 
+              col = (item.column or 1) - 1,
               severity = severity_map[item.severity] or vim.diagnostic.severity.ERROR,
               message = item.message or '',
               source = 'gcc_python',
             })
           end
-          
+
           return diagnostics
         end,
       }
-      
+
       -- Configure linters by filetype
       lint.linters_by_ft = {
         c = { 'gcc_python' },
         cpp = { 'gcc_python' },
       }
-      
+
       -- Auto-lint on these events
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
       vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
@@ -1558,10 +1596,10 @@ require('lazy').setup({
           lint.try_lint()
         end,
       })
-      
+
       -- Manual command to test linting
       vim.api.nvim_create_user_command('TestLint', function()
-        lint.try_lint('gcc_python')
+        lint.try_lint 'gcc_python'
       end, { desc = 'Test GCC linter manually' })
     end,
   },
@@ -1604,6 +1642,14 @@ require('lazy').setup({
       vim.keymap.set('i', '<F3>', '<C-c><F3>')
       vim.keymap.set('!', '<C-F3>', '<Nop>')
       vim.keymap.set('i', '<C-F3>', '<C-c><C-F3>')
+
+      -- ESC to close nvim-tree when in nvim-tree buffer
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'NvimTree',
+        callback = function(ev)
+          vim.keymap.set('n', '<Esc>', '<cmd>NvimTreeClose<CR>', { buffer = ev.buf, desc = 'Close nvim-tree' })
+        end,
+      })
     end,
   },
 

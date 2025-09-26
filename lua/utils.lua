@@ -141,7 +141,6 @@ function M.open_markdown_link()
       elseif string.match(converted_url, '^https?://') then
         -- It's a URL, open with xdg-open
         vim.fn.system('xdg-open "' .. converted_url .. '"')
-        print('Opening URL: ' .. converted_url)
       else
         -- It's a relative path, handle anchors
         local file_path = converted_url
@@ -174,11 +173,11 @@ end
 -- Show Vim key notation for the next key pressed
 -- NOTE: Native Neovim methods to identify keys:
 --   1. In insert mode: <C-v> then press your key combination
---   2. Command mode: :<C-v> then press your key combination  
+--   2. Command mode: :<C-v> then press your key combination
 --   3. Check mappings: :map <key> or :verbose map <key>
 --   4. Help: :help key-notation or :help i_<key>
 function M.show_key_notation()
-  print('Press any key combination to see its Vim notation...')
+  print 'Press any key combination to see its Vim notation...'
   local key = vim.fn.getchar()
   local key_name = vim.fn.keytrans(vim.fn.nr2char(key))
   print(string.format('Vim key notation: %s', key_name))
