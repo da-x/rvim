@@ -119,7 +119,7 @@ local function is_loclist_open()
 end
 
 local function save_and_refresh_loclist()
-  vim.cmd('write')
+  vim.cmd 'write'
   -- Wait a bit for linters to run, then refresh location list
   vim.defer_fn(function()
     smart_setloclist()
@@ -129,6 +129,17 @@ end
 vim.keymap.set('n', '<leader>q', smart_setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.keymap.set('n', '<leader>Q', '<cmd>lclose<cr>', { desc = 'Close location list' })
 vim.keymap.set('n', '<leader>w', save_and_refresh_loclist, { desc = 'Save and refresh location list' })
+
+-- Navigate diagnostics
+vim.keymap.set('n', '<F4>', vim.diagnostic.goto_next, { desc = 'Goto next diagnostic message' })
+vim.keymap.set('n', '<F16>', vim.diagnostic.goto_prev, { desc = 'Goto prev diagnostic message' }) -- Shift-F4
+vim.keymap.set('n', '<F5>', function()
+  local diagnostics = vim.diagnostic.get(0) -- Get diagnostics for current buffer
+  if #diagnostics > 0 then
+    vim.api.nvim_win_set_cursor(0, { diagnostics[1].lnum + 1, diagnostics[1].col })
+  end
+end, { desc = 'Goto first diagnostic message' })
+-- vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
