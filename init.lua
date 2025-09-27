@@ -97,7 +97,38 @@ vim.o.virtualedit = 'onemore,block'
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+-- Location list configuration
+local function smart_setloclist()
+  vim.diagnostic.setloclist()
+  -- Auto-resize location list window to be minimal but max 1/3 of screen
+  local loc_items = #vim.fn.getloclist(0)
+  if loc_items > 0 then
+    local max_height = math.floor(vim.o.lines / 3)
+    local height = math.min(loc_items, max_height)
+    vim.cmd('lopen ' .. height)
+  end
+end
+
+local function is_loclist_open()
+  for _, win in ipairs(vim.fn.getwininfo()) do
+    if win.loclist == 1 then
+      return true
+    end
+  end
+  return false
+end
+
+local function save_and_refresh_loclist()
+  vim.cmd('write')
+  -- Wait a bit for linters to run, then refresh location list
+  vim.defer_fn(function()
+    smart_setloclist()
+  end, 100)
+end
+
+vim.keymap.set('n', '<leader>q', smart_setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>Q', '<cmd>lclose<cr>', { desc = 'Close location list' })
+vim.keymap.set('n', '<leader>w', save_and_refresh_loclist, { desc = 'Save and refresh location list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -461,53 +492,33 @@ vim.api.nvim_create_autocmd('FileType', {
     local opts = { buffer = ev.buf }
 
     -- Markdown-specific shortcuts
-    vim.keymap.set('n', '<leader>e\\', '<A-e>d', vim.tbl_extend('force', opts, { desc = 'Insert markdown date' }))
-    vim.keymap.set('n', 'gq', function()
-      vim.fn.MyMarkdownGQ()
-    end, vim.tbl_extend('force', opts, { desc = 'Format markdown paragraph' }))
     vim.keymap.set('i', '<A-e>d', '<C-c><A-e>d', vim.tbl_extend('force', opts, { desc = 'Insert markdown date' }))
-
-    -- Bullet point operations
-    vim.keymap.set('n', '<A-e><CR>', function()
-      vim.fn.MyMarkdownInsertBullet()
-    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<C-CR>', function()
-      vim.fn.MyMarkdownInsertBullet()
-    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<leader><Down>', function()
-      vim.fn.MyMarkdownInsertBullet()
-    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown bullet' }))
-    vim.keymap.set('n', '<A-e><Right>', function()
-      vim.fn.MyMarkdownInsertSubBullet()
-    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
-    vim.keymap.set('n', '<leader><Right>', function()
-      vim.fn.MyMarkdownInsertSubBullet()
-    end, vim.tbl_extend('force', opts, { desc = 'Insert markdown sub-bullet' }))
 
     -- Link handling
     vim.keymap.set('n', '<CR>', function()
       require('utils').open_markdown_link()
     end, vim.tbl_extend('force', opts, { desc = 'Open markdown link under cursor' }))
-    vim.keymap.set('n', '<C-Del>', function()
-      vim.fn.MyMarkdownToggleComposeMode()
-    end, vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' }))
-    vim.keymap.set(
-      'i',
-      '<C-Del>',
-      '<C-c><cmd>lua vim.fn.MyMarkdownToggleComposeMode()<cr>',
-      vim.tbl_extend('force', opts, { desc = 'Toggle markdown compose mode' })
-    )
-
-    -- Code block selection
-    vim.keymap.set('v', '<leader>`', function()
-      vim.fn.MyMarkdownCodeBlockSelection()
-    end, vim.tbl_extend('force', opts, { desc = 'Wrap selection in code block' }))
 
     -- Date and timestamp insertions
-    vim.keymap.set('i', '<A-e><Down>', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
+    vim.keymap.set(
+      'i',
+      '<A-e><Down>',
+      'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR> <Backspace>',
+      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' })
+    )
     vim.keymap.set('i', '<A-e><CR>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
-    vim.keymap.set('i', '<A-e>d', 'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
-    vim.keymap.set('n', '<A-e>d', 'Go<C-R>=MyVimEditInsertDateLine()<CR><CR>', vim.tbl_extend('force', opts, { desc = 'Insert date line at end' }))
+    vim.keymap.set(
+      'i',
+      '<A-e>d',
+      'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR> <Backspace>',
+      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' })
+    )
+    vim.keymap.set(
+      'n',
+      '<A-e>d',
+      'Go<CR><CR><C-R>=MyVimEditInsertDateLine()<CR><CR> <Backspace>',
+      vim.tbl_extend('force', opts, { desc = 'Insert date line at end' })
+    )
     vim.keymap.set('n', '<A-e><CR>', 'Go<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
 
     -- Drag lines up/down
@@ -1199,7 +1210,8 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'enter',
+        preset = 'super-tab',
+        ['<M-T-PageUp>'] = { 'accept' },
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps

@@ -267,6 +267,151 @@ function! MarkdownInsertTimestamp() abort
   normal! G$a
 endfunction
 
+function! MyMarkdownVisualModeExitOnce()
+  if mode() =~# '\vV|v'
+    let b:cursor_moves += 1
+    if b:cursor_moves >= 10
+      return
+    endif
+    call feedkeys("\<Esc>\<Esc>")
+    augroup MyMarkdownVisualModeExitOnce
+      autocmd!
+    augroup END
+  endif
+endfunction
+
+function! MyMarkdownSetupVisualModeExitOnce()
+  let b:cursor_moves = 0
+  let l:pos = getpos("'<")
+  call cursor(l:pos[1], l:pos[2])
+  augroup MyMarkdownVisualModeExitOnce
+    autocmd!
+    autocmd CursorMoved * call MyMarkdownVisualModeExitOnce()
+    autocmd CursorMovedI * call MyMarkdownVisualModeExitOnce()
+  augroup END
+endfunction
+
+function! MyMarkdownBulletMetrics(start_line, dir, start_indent)
+  " Get the current line and its indentation level
+  let l:current_line = a:start_line
+  let l:current_indent = indent(l:current_line)
+  if a:start_indent != -1 && l:current_indent != a:start_indent
+    " Not a sibling node
+    return [-1, 0, 0]
+  endif
+  let l:last_line = line('$')
+
+  " Initialize the end line to the current line
+  let l:end_line = l:current_line
+
+  if a:dir == 1
+    " Find the last line with equal or greater indentation
+    while l:end_line < l:last_line && indent(l:end_line + 1) > current_indent
+      let l:end_line += 1
+    endwhile
+    return [l:current_indent, l:current_line, l:end_line]
+  else
+    " Find the first line with equal or greater indentation
+    while l:end_line > 1 && indent(l:end_line - 1) > current_indent
+      let l:end_line -= 1
+    endwhile
+    let l:end_line -= 1
+    let l:current_line -= 1
+    if l:end_line == l:current_line && indent(l:end_line) < current_indent
+      return [-1, 0, 0]
+    endif
+    return [l:current_indent, l:end_line, l:current_line]
+  fi
+endfunction
+
+function! MyMarkdownSelectWholeBullet()
+  " Check if in visual mode; use '< if so, otherwise use the current line
+  let l:start_line = mode() =~# 'V' ? getpos("'<")[1] : line('.')
+
+  let [l:current_indent, l:current_line, l:end_line] = MyMarkdownBulletMetrics(l:start_line, 1, -1)
+  if l:current_indent == -1
+    return [l:current_indent, l:current_line, l:end_line]
+  endif
+
+  " Set the visual selection marks '< and '>
+  call setpos("'<", [0, l:current_line, 1, 0])
+  call setpos("'>", [0, l:end_line, 1, 0])
+
+  execute "normal! V"
+  execute "normal! gv"
+  return [l:current_indent, l:current_line, l:end_line]
+endfunction
+
+function! MyMarkdownDragUp() range
+  let l:orig_pos = getpos(".")
+  let [l:current_indent, l:current_line, l:end_line] = MyMarkdownSelectWholeBullet()
+  if l:current_indent == -1
+    return
+  endif
+
+  let [l:prev_indent, l:prev_start_line, l:prev_end_line] = MyMarkdownBulletMetrics(l:current_line, -1, l:current_indent)
+  if l:prev_indent == -1
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+  if getline(l:prev_start_line) == ""
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+
+  for l:i in range(1, l:prev_end_line - l:prev_start_line + 1)
+    execute "normal \<Plug>MoveBlockUp"
+  endfor
+  call MyMarkdownSetupVisualModeExitOnce()
+endfunction
+
+function! MyMarkdownDragDown() range
+  let l:orig_pos = getpos(".")
+  let [l:current_indent, l:current_line, l:end_line] = MyMarkdownSelectWholeBullet()
+  if l:current_indent == -1
+    return
+  endif
+
+  let [l:next_indent, l:next_start_line, l:next_end_line] = MyMarkdownBulletMetrics(l:end_line + 1, 1, l:current_indent)
+  if l:next_indent == -1
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+  if getline(l:next_start_line) == ""
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+
+  for l:i in range(1, l:next_end_line - l:next_start_line + 1)
+    execute "normal \<Plug>MoveBlockDown"
+  endfor
+  call MyMarkdownSetupVisualModeExitOnce()
+endfunction
+
+function! MyMarkdownDragDown() range
+  let l:orig_pos = getpos(".")
+  let [l:current_indent, l:current_line, l:end_line] = MyMarkdownSelectWholeBullet()
+  if l:current_indent == -1
+    return
+  endif
+
+  let [l:next_indent, l:next_start_line, l:next_end_line] = MyMarkdownBulletMetrics(l:end_line + 1, 1, l:current_indent)
+  if l:next_indent == -1
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+  if getline(l:next_start_line) == ""
+    call cursor(l:orig_pos[1], l:orig_pos[2])
+    return
+  endif
+
+  for l:i in range(1, l:next_end_line - l:next_start_line + 1)
+    execute "normal \<Plug>MoveBlockDown"
+  endfor
+  call MyMarkdownSetupVisualModeExitOnce()
+endfunction
+
+
 function! InKnotBuffer()
   if &filetype !=# 'markdown'
       return
