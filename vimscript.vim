@@ -388,30 +388,6 @@ function! MyMarkdownDragDown() range
   call MyMarkdownSetupVisualModeExitOnce()
 endfunction
 
-function! MyMarkdownDragDown() range
-  let l:orig_pos = getpos(".")
-  let [l:current_indent, l:current_line, l:end_line] = MyMarkdownSelectWholeBullet()
-  if l:current_indent == -1
-    return
-  endif
-
-  let [l:next_indent, l:next_start_line, l:next_end_line] = MyMarkdownBulletMetrics(l:end_line + 1, 1, l:current_indent)
-  if l:next_indent == -1
-    call cursor(l:orig_pos[1], l:orig_pos[2])
-    return
-  endif
-  if getline(l:next_start_line) == ""
-    call cursor(l:orig_pos[1], l:orig_pos[2])
-    return
-  endif
-
-  for l:i in range(1, l:next_end_line - l:next_start_line + 1)
-    execute "normal \<Plug>MoveBlockDown"
-  endfor
-  call MyMarkdownSetupVisualModeExitOnce()
-endfunction
-
-
 function! InKnotBuffer()
   if &filetype !=# 'markdown'
       return
@@ -435,3 +411,21 @@ function! InKnotBuffer()
 endfunction
 
 command! InKnotBuffer call InKnotBuffer()
+
+" =============================================================================
+" FZF Spell suggestions
+" From: https://www.codementor.io/@coreyja/coreyja-vim-spelling-suggestions-with-fzf-p6ce3zb9a
+
+function! FzfSpellSink(word)
+  exe 'normal! "_ciw'.a:word
+endfunction
+
+function! FzfSpell()
+  let suggestions = spellsuggest(expand("<cword>"))
+  return fzf#run({
+    \ 'source': suggestions, 
+    \ 'sink': function("FzfSpellSink"), 
+    \ 'down': 10,
+    \ 'options': '--bind=esc:cancel'
+    \ })
+endfunction

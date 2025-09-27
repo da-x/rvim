@@ -157,6 +157,15 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 
 -- Delete current line with Ctrl-D
 vim.keymap.set('n', '<C-d>', 'dd', { desc = 'Delete current line' })
+vim.keymap.set('i', '<C-d>', '<C-o>dd', { desc = 'Delete current line' })
+
+-- Undo with Ctrl-Z
+vim.keymap.set('n', '<C-z>', ':undo<CR>', { desc = 'Undo' })
+vim.keymap.set('i', '<C-z>', '<ESC>:undo<CR>i', { desc = 'Undo' })
+
+-- Redo with Alt-Ctrl-U
+vim.keymap.set('n', '<M-C-U>', ':redo<CR>', { desc = 'Redo' })
+vim.keymap.set('i', '<M-C-U>', '<ESC>:redo<CR>i', { desc = 'Redo' })
 
 -- Duplicate current line with <leader>d
 vim.keymap.set('n', '<leader>d', 'yyp', { desc = 'Duplicate current line' })
@@ -252,6 +261,14 @@ end, { desc = 'Yank current directory to system clipboard' })
 vim.keymap.set('n', '<A-t>', '*``', { desc = 'Search current word without moving cursor' })
 vim.keymap.set('v', '<A-t>', '*``', { desc = 'Search selection without moving cursor' })
 vim.keymap.set('i', '<A-t>', '<C-c>*``', { desc = 'Search current word without moving cursor' })
+
+-- Make Backspace behave like it normally does in normal mode (delete char before cursor)
+vim.keymap.set('n', '<BS>', '"_X', { desc = 'Delete character before cursor' })
+
+-- FZF spell suggestions (replaces default z= spell menu)
+vim.keymap.set('n', 'z=', function()
+  vim.fn.FzfSpell()
+end, { desc = 'FZF spell suggestions for word under cursor' })
 
 -- Substitute delimiter rotation
 vim.keymap.set('n', '<A-d>', function()
@@ -1161,6 +1178,11 @@ require('lazy').setup({
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
     },
+  },
+
+  {
+    'matze/vim-move',
+    config = function() end,
   },
 
   { -- Autocompletion

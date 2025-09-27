@@ -120,7 +120,7 @@ function M.open_markdown_link()
   local line = vim.fn.getline '.'
   local col = vim.fn.col '.'
 
-  -- Find markdown link pattern [content](url) around cursor
+  -- First, try to find markdown link pattern [content](url) around cursor
   local link_pattern = '%[([^%]]+)%]%(([^%)]+)%)'
   local start_pos = 1
 
@@ -167,7 +167,27 @@ function M.open_markdown_link()
     start_pos = content_end + 1
   end
 
-  print 'No markdown link found under cursor'
+  -- If no markdown link found, try to find plain HTTP/HTTPS URLs around cursor
+  local url_pattern = '(https?://[%w%-._~:/?#%[%]@!$&\'%(%)%*%+,;=%%]+)'
+  start_pos = 1
+
+  while true do
+    local url_start, url_end, url = string.find(line, url_pattern, start_pos)
+    if not url_start then
+      break
+    end
+
+    -- Check if cursor is within this URL
+    if col >= url_start and col <= url_end then
+      -- Found a plain URL under cursor, open it
+      vim.fn.system('xdg-open "' .. url .. '"')
+      return
+    end
+
+    start_pos = url_end + 1
+  end
+
+  print 'No link or URL found under cursor'
 end
 
 -- Show Vim key notation for the next key pressed
