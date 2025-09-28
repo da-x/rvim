@@ -38,6 +38,9 @@ vim.o.breakindent = true
 -- Save undo history
 vim.o.undofile = true
 
+-- Disable swap files
+vim.o.swapfile = false
+
 -- Remember cursor position, search history, etc.
 vim.o.shada = "'100,<50,s10,h,f1"
 
@@ -46,7 +49,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 
 -- Keep signcolumn on by default
-vim.o.signcolumn = 'yes'
+vim.o.signcolumn = 'auto:2'
 
 -- Decrease update time
 vim.o.updatetime = 250
@@ -167,8 +170,12 @@ vim.keymap.set('i', '<C-z>', '<ESC>:undo<CR>i', { desc = 'Undo' })
 vim.keymap.set('n', '<M-C-U>', ':redo<CR>', { desc = 'Redo' })
 vim.keymap.set('i', '<M-C-U>', '<ESC>:redo<CR>i', { desc = 'Redo' })
 
--- Duplicate current line with <leader>d
-vim.keymap.set('n', '<leader>d', 'yyp', { desc = 'Duplicate current line' })
+-- Duplicate current line with <leader>d (without affecting registers)
+vim.keymap.set('n', '<leader>d', function()
+  local line = vim.api.nvim_get_current_line()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  vim.api.nvim_buf_set_lines(0, row, row, false, { line })
+end, { desc = 'Duplicate current line' })
 
 -- Save current file with Ctrl-X s
 vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
@@ -180,6 +187,9 @@ vim.keymap.set('n', '<C-g>L', '<cmd>BCommits<CR>', { desc = 'File history (commi
 vim.keymap.set('n', '<C-g>AA', function()
   vim.fn.MyGitAddAllAmend()
 end, { desc = 'Add all changes and amend last commit' })
+vim.keymap.set('n', '<C-g>PP', function()
+  vim.fn.MyGitPush()
+end, { desc = 'Push changes' })
 
 -- Git hunk operations
 vim.keymap.set('n', '<C-g><Insert>', function()
@@ -390,8 +400,12 @@ vim.keymap.set('i', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by
 
 vim.g.local_vimrc = { 'vimrc_local.vim' }
 vim.g.local_vimrc_look_only_in_dot_git = true
-vim.g.local_vimrc_enable = 1
-vim.g.local_vimrc_ask = 0
+vim.g.local_vimrc_options = {
+  whitelist = { vim.fn.expand '$HOME' }, -- Because of local_vimrc_look_only_in_dot_git, all is vetted
+  blacklist = {},
+  asklist = {},
+  sandboxlist = {},
+}
 
 -- Load utility functions
 local utils = require 'utils'
@@ -549,17 +563,29 @@ vim.api.nvim_create_autocmd('FileType', {
     )
     vim.keymap.set('n', '<A-e><CR>', 'Go<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
 
-    -- Drag lines up/down
-    vim.keymap.set('n', '<A-k>', function()
+    -- Drag markdown bullets up/down
+    vim.keymap.set('n', '<M-k>', function()
       vim.fn.MyMarkdownDragUp()
     end, vim.tbl_extend('force', opts, { desc = 'Move line up' }))
-    vim.keymap.set('n', '<A-j>', function()
+    vim.keymap.set('n', '<M-j>', function()
       vim.fn.MyMarkdownDragDown()
     end, vim.tbl_extend('force', opts, { desc = 'Move line down' }))
-    vim.keymap.set('v', '<A-k>', function()
+    vim.keymap.set('v', '<M-k>', function()
       vim.fn.MyMarkdownDragUp()
     end, vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
-    vim.keymap.set('v', '<A-j>', function()
+    vim.keymap.set('v', '<M-j>', function()
+      vim.fn.MyMarkdownDragDown()
+    end, vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
+    vim.keymap.set('n', '<S-Up>', function()
+      vim.fn.MyMarkdownDragUp()
+    end, vim.tbl_extend('force', opts, { desc = 'Move line up' }))
+    vim.keymap.set('n', '<S-Down>', function()
+      vim.fn.MyMarkdownDragDown()
+    end, vim.tbl_extend('force', opts, { desc = 'Move line down' }))
+    vim.keymap.set('v', '<S-Up>', function()
+      vim.fn.MyMarkdownDragUp()
+    end, vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
+    vim.keymap.set('v', '<S-Down>', function()
       vim.fn.MyMarkdownDragDown()
     end, vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
   end,
@@ -1244,8 +1270,17 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'super-tab',
-        ['<M-T-PageUp>'] = { 'accept' },
-
+        ['<M-T-PageUp>'] = {
+          function(cmp)
+            if not require('blink.cmp').is_visible() and vim.bo.filetype == 'gitcommit' then
+              vim.schedule(function()
+                vim.fn.EndCommitMessageEdit()
+              end)
+            else
+              cmp.accept()
+            end
+          end,
+        },
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
       },

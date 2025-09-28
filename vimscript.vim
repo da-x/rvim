@@ -223,7 +223,7 @@ function! MyMarkdownSettings()
   setl formatlistpat+=\\\|^\\s*\\*\\s*
   setl comments=fb:>,fb:*,fb:+,fb:-
   setl formatoptions-=q
-  setl conceallevel=2
+  setl conceallevel=3
 
   syntax sync fromstart
 endfunction

@@ -20,6 +20,10 @@ function! MyGitAddAllAmend() abort
   Git commit -a --amend
 endfunction
 
+function! MyGitPush() abort
+  Git push
+endfunction
+
 " =============================================================================
 " Git rebase functions
 

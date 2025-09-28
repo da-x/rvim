@@ -61,7 +61,7 @@ def parse_kernel_cmd_file(filepath):
 
     if not cmd_file.exists():
         debug_print(f"Kernel cmd file not found: {cmd_file}")
-        return None
+        return None, None
 
     debug_print(f"Found kernel cmd file: {cmd_file}")
     try:
@@ -69,19 +69,64 @@ def parse_kernel_cmd_file(filepath):
             content = f.read()
 
         # Look for line matching: cmd_.* := .* gcc .*
-        pattern = r'^(saved)?cmd_.*:=\s*(.*?\s+gcc\s+.*)$'
+        pattern = r'^(saved)?cmd_([^:]+):=\s*(.*?\s+gcc\s+.*)$'
         for line in content.splitlines():
             match = re.match(pattern, line)
             if match:
-                cmd_line = match.group(2).strip()
+                target_obj = match.group(2).strip()
+                cmd_line = match.group(3).strip()
                 debug_print(f"Found kernel build command: {cmd_line}")
-                return cmd_line
+                debug_print(f"Target object file: {target_obj}")
+
+                # Find working directory by matching source path with object path
+                working_dir = find_working_directory(filepath, target_obj)
+                debug_print(f"Determined working directory: {working_dir}")
+
+                return cmd_line, working_dir
 
         debug_print("No gcc command found in kernel cmd file")
-        return None
+        return None, None
     except Exception as e:
         debug_print(f"Error reading kernel cmd file: {e}")
-        return None
+        return None, None
+
+
+def find_working_directory(source_filepath, target_obj_path):
+    """Find working directory by matching source path components with target object path"""
+    source_path = Path(source_filepath).resolve()
+    target_path = Path(target_obj_path)
+
+    debug_print(f"Source path: {source_path}")
+    debug_print(f"Target object path: {target_path}")
+
+    # Get the target directory path components (excluding filename)
+    target_dir_parts = target_path.parent.parts if target_path.parent != Path('.') else []
+    debug_print(f"Target directory components: {target_dir_parts}")
+
+    # Get source directory path (excluding filename)
+    source_dir_path = source_path.parent
+
+    # Walk up the source path and try to match with target directory components
+    current_source = source_dir_path
+
+    while current_source != current_source.parent:  # While not at filesystem root
+        source_parts = current_source.parts
+        debug_print(f"Checking source parts: {source_parts}")
+
+        # Try to match target directory components with the end of source components
+        if len(target_dir_parts) > 0 and len(source_parts) >= len(target_dir_parts):
+            # Check if target directory components match the end of source components
+            if source_parts[-len(target_dir_parts):] == target_dir_parts:
+                # Found match - return the directory containing the root component
+                match_start = len(source_parts) - len(target_dir_parts)
+                working_dir = str(Path(*source_parts[:match_start]))
+                debug_print(f"Found match! Working directory: {working_dir}")
+                return working_dir if working_dir else "/"
+
+        current_source = current_source.parent
+
+    debug_print("No match found, using current directory")
+    return "."
 
 
 def detect_compiler(filepath):
@@ -140,7 +185,7 @@ def parse_gcc_output(output, filepath):
 def run_gcc_check(filepath):
     """Run GCC/G++ syntax check on the given file"""
     # Check for kernel module compilation first
-    kernel_cmd = parse_kernel_cmd_file(filepath)
+    kernel_cmd, kernel_workdir = parse_kernel_cmd_file(filepath)
 
     if kernel_cmd:
         # Use kernel build command, but modify for syntax checking
@@ -165,8 +210,7 @@ def run_gcc_check(filepath):
                 'message': 'Could not find gcc in kernel build command'
             }]
 
-        # Infer kernel working directory
-        kernel_workdir = infer_kernel_working_dir(cmd_parts)
+        # kernel_workdir already determined from parse_kernel_cmd_file
 
         # Use the kernel command as-is, but replace -c with -fsyntax-only
         cmd = []
@@ -224,7 +268,7 @@ def run_gcc_check(filepath):
 
             # Build docker exec command with working directory if available
             docker_cmd = ['docker', 'exec']
-            if kernel_cmd and 'kernel_workdir' in locals() and kernel_workdir:
+            if kernel_cmd and kernel_workdir:
                 docker_cmd.extend(['-w', kernel_workdir])
                 debug_print(f"Setting Docker working directory: {kernel_workdir}")
             docker_cmd.append(container_name)
