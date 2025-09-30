@@ -56,6 +56,7 @@ function! s:BackgroundSetClip_JobEnd(job_id, exit_code, event_type) abort
 endfunction
 
 function! SetSystemClipboard(string) abort
+  call ReloadEnvironment()
   let l:display = system('echo $DISPLAY')
   let l:helper = '$HOME/.vim_runtime/bin/set-all-clipboard.py'
   if !has('nvim') || !exists(l:helper) || l:display ==# ''
@@ -428,4 +429,32 @@ function! FzfSpell()
     \ 'down': 10,
     \ 'options': '--bind=esc:cancel'
     \ })
+endfunction
+
+" =============================================================================
+" Environment reload with cooldown
+
+let g:last_reload_time = 0
+
+function! ReloadEnvironment() abort
+  if $TMUX ==# ''
+    return
+  endif
+
+  let l:current_time = localtime()
+  if l:current_time - g:last_reload_time < 60
+    return
+  endif
+  let g:last_reload_time = l:current_time
+
+  silent let l:env = system('tmux show-environment')
+  for l:line in split(l:env, '\n')
+    if l:line =~# '\V\^-\(\.\*\)'
+      " Only possible with 8.0.1832 [ https://github.com/vim/vim/issues/1116 ]
+      silent! execute 'unlet $'.strpart(l:line, 1)
+    else
+      let [l:name, l:value] = split(l:line, '=')
+      execute 'let $'.l:name." = \"".escape(l:value, '\\/.*$^~[]')."\""
+    endif
+  endfor
 endfunction

@@ -140,6 +140,7 @@ function M.open_markdown_link()
         return
       elseif string.match(converted_url, '^https?://') then
         -- It's a URL, open with xdg-open
+        vim.fn.ReloadEnvironment()
         vim.fn.system('xdg-open "' .. converted_url .. '"')
       else
         -- It's a relative path, handle anchors
@@ -168,7 +169,7 @@ function M.open_markdown_link()
   end
 
   -- If no markdown link found, try to find plain HTTP/HTTPS URLs around cursor
-  local url_pattern = '(https?://[%w%-._~:/?#%[%]@!$&\'%(%)%*%+,;=%%]+)'
+  local url_pattern = "(https?://[%w%-._~:/?#%[%]@!$&'%(%)%*%+,;=%%]+)"
   start_pos = 1
 
   while true do
@@ -180,6 +181,7 @@ function M.open_markdown_link()
     -- Check if cursor is within this URL
     if col >= url_start and col <= url_end then
       -- Found a plain URL under cursor, open it
+      vim.fn.ReloadEnvironment()
       vim.fn.system('xdg-open "' .. url .. '"')
       return
     end
