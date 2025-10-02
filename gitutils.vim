@@ -167,6 +167,19 @@ function! MyFZFDiffHunks(cmd,...) abort
               \ }))
 endfunction
 
+function GFilesWithPreview()
+  call fzf#vim#gitfiles('', {'options': [
+        \ '--sync',
+        \ '--query', expand('%h'),
+        \ '--bind', 'result:transform:
+           \  if [[ -n $FZF_QUERY ]]; then ;
+           \      echo "track-current+clear-query" ;
+           \  else ;
+           \      echo "untrack-current+offset-middle+unbind(result)" ;
+           \  fi',
+        \ '--preview', 'bat -p --color always {}'],
+        \ 'window': { 'width': 0.9, 'height': 0.9 }})
+endfunction
 " =============================================================================
 " Git autocommands
 

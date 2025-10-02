@@ -183,6 +183,7 @@ vim.keymap.set('n', '<C-x><C-s>', '<cmd>w<CR>', { desc = 'Save current file' })
 
 -- Git bindings (C-g prefix) - comprehensive git workflow shortcuts
 vim.keymap.set('n', '<C-g>s', '<cmd>Git<CR>', { desc = 'Git status (stage with s, unstage with u)' })
+vim.keymap.set('n', '<C-g>f', '<cmd>call GFilesWithPreview()<CR>', { desc = 'Git status (stage with s, unstage with u)' })
 vim.keymap.set('n', '<C-g>L', '<cmd>BCommits<CR>', { desc = 'File history (commits affecting current buffer)' })
 vim.keymap.set('n', '<C-g>AA', function()
   vim.fn.MyGitAddAllAmend()
@@ -637,6 +638,13 @@ vim.api.nvim_create_user_command('SetupKnotBindings', function()
   -- Carve operation
   vim.keymap.set('x', '<C-n><Insert>', ':<c-u>call knot#CarveCurrentInteractive()<CR>', vim.tbl_extend('force', opts, { desc = 'Carve current selection' }))
 end, { desc = 'Setup Knot buffer bindings' })
+
+-- Format on save toggle command
+vim.api.nvim_create_user_command('ToggleFormatOnSave', function()
+  vim.g.disable_format_on_save = not vim.g.disable_format_on_save
+  local status = vim.g.disable_format_on_save and 'disabled' or 'enabled'
+  print('Format on save: ' .. status)
+end, { desc = 'Toggle format on save globally' })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -1185,6 +1193,10 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
+        -- Check global disable flag first
+        if vim.g.disable_format_on_save then
+          return nil
+        end
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
@@ -1197,10 +1209,6 @@ require('lazy').setup({
             lsp_format = 'fallback',
           }
         end
-        return {
-          timeout_ms = 500,
-          lsp_format = 'never', -- lsp_format_opt,
-        }
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
@@ -1277,6 +1285,16 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'super-tab',
+        ['<CR>'] = {
+          function(cmp)
+            if not require('blink.cmp').is_visible() or vim.bo.filetype == 'markdown' then
+              cmp.cancel()
+              vim.api.nvim_feedkeys('\r', 'n', true)
+            else
+              cmp.accept()
+            end
+          end,
+        },
         ['<M-T-PageUp>'] = {
           function(cmp)
             if not require('blink.cmp').is_visible() and vim.bo.filetype == 'gitcommit' then
