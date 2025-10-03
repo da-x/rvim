@@ -1,0 +1,690 @@
+snippet userc
+use std::cell::RefCell;
+use std::rc::Rc;
+${0}
+endsnippet
+
+snippet usefs
+use std::fs;
+${0}
+endsnippet
+
+snippet def
+Default::default()
+endsnippet
+
+snippet errcast
+if let Some(e) = e.downcast_ref::<Error>() {
+    ${1}
+}
+endsnippet
+
+snippet errcast_match
+match e.downcast::<Error>() {
+    Ok(Error::Something) => {
+        // Handling
+    },
+    Ok(e) => return Err(e).context("unhandled error"),
+    Err(e) => return Err(e.context("unhandled error")),
+}
+endsnippet
+
+snippet ..def
+..Default::default()
+endsnippet
+
+snippet traceback
+tracing::error!("Backtrace: {}", std::backtrace::Backtrace::force_capture());
+endsnippet
+
+snippet idef
+impl Default for $1 {
+    fn default() -> Self {
+    }
+}
+endsnippet
+
+snippet fmtwidth
+assert_eq!(format!("Hello {:<width$}!", "x", width=5),  "Hello x    !");
+assert_eq!(format!("Hello {:-<5}!", "x"), "Hello x----!");
+assert_eq!(format!("Hello {:^5}!", "x"),  "Hello   x  !");
+assert_eq!(format!("Hello {:>5}!", "x"),  "Hello     x!");
+endsnippet
+
+snippet withctx
+with_context(|| format!("{}"))
+endsnippet
+
+snippet jsclosure
+let $1 = Closure::wrap(Box::new(move || {
+    $2
+}) as Box<dyn FnMut()>);
+endsnippet
+
+snippet opt_asrefmap
+trait AsRefMap {
+    type T;
+    fn as_refmap<'b, F, U>(&'b self, f: F) -> Option<U>
+        where F: FnOnce(&'b Self::T) -> U, U: 'b;
+
+}
+
+impl<T> AsRefMap for Option<T> {
+    type T = T;
+    fn as_refmap<'b, F, U>(&'b self, f: F) -> Option<U>
+        where F: FnOnce(&'b Self::T) -> U, U: 'b
+    {
+        self.as_ref().map(|x| f(&x))
+    }
+}
+endsnippet
+
+snippet script
+#!/usr/bin/env -S cargo eval --
+// cargo-deps: log="0.4.0"
+// vi: ft=rust
+
+fn main() -> std::io::Result<()> {
+    Ok(())
+}
+endsnippet
+
+snippet oktyped
+Ok::<_, anyhow::Error>(())
+endsnippet
+
+snippet ifls
+if let Some($1) = $2 {
+    $0
+}
+endsnippet
+
+snippet lsorok
+let $1 = if let Some($1) = $2 {
+    $1
+} else {
+    return Ok(());
+};
+endsnippet
+
+snippet lsorcontinue
+let $1 = if let Some($1) = $2 {
+    $1
+} else {
+    continue;
+};
+endsnippet
+
+snippet trycatchclosure
+let _res = (|| {
+    $0
+    Ok::<_, Error>(())
+})();
+endsnippet
+
+snippet msome
+match $1 {
+    None => {},
+    Some(v) => {
+    }
+}
+endsnippet
+
+snippet dis
+#[cfg(disable)]
+endsnippet
+
+snippet fdis
+#[cfg(feature = "disabled")]
+endsnippet
+
+snippet regex
+lazy_static! {
+    static ref RE: Regex = Regex::new("...").unwrap();
+}
+endsnippet
+
+snippet lazystaticmutex
+use std::sync::Mutex;
+
+lazy_static::lazy_static! {
+    static ref MUTEX: Mutex<$1> = Mutex::new($2);
+}
+
+fn example() {
+    let locked = MUTEX.lock().unwrap();
+    $3
+}
+endsnippet
+
+snippet struct
+struct $1 {
+}
+
+impl $1 {
+    fn new() -> Self {
+        Self {
+	    $0
+        }
+    }
+}
+endsnippet
+
+snippet global_mutex
+lazy_static::lazy_static! {
+    static ref GLOBAL: Arc<Mutex<$1>> = Arc::new(Mutex::new($2));
+}
+endsnippet
+
+snippet fnew
+fn new() -> Self {
+    Self {
+        $0
+    }
+}
+endsnippet
+
+snippet ifrom
+impl From<$1> for $2 {
+    fn from(v: $1) -> Self { $2::$3(v) }
+}
+endsnippet
+
+snippet iter
+impl Iterator for $1 {
+    type Item = $2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+	None
+    }
+}
+endsnippet
+
+snippet idebug
+impl std::fmt::Debug for $1 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "$1 {{ }}")
+    }
+}
+endsnippet
+
+snippet fileread
+let mut file = File::open($1)?;
+let mut contents = String::new();
+file.read_to_string(&mut contents)?;
+endsnippet
+
+snippet filewrite
+use std::io::{Write, BufWriter};
+use std::fs::{File, OpenOptions};
+
+let file = OpenOptions::new().write(true).truncate(true).open($1)?;
+let mut file = BufWriter::new(file);
+writeln!(&mut file, "{}", $2)?;
+endsnippet
+
+snippet fileappend
+use std::io::{Write, BufWriter};
+use std::fs::{File, OpenOptions};
+
+if let Ok(file ) = OpenOptions::new().write(true).create(true).append(true).open("/tmp/x") {
+    let mut file = BufWriter::new(file);
+    let _ = writeln!(&mut file, "{:?}", content);
+}
+endsnippet
+
+snippet fnms
+fn $1(&mut self) {
+    $0
+}
+endsnippet
+
+snippet fns
+fn $1(&self) {
+    $0
+}
+endsnippet
+
+snippet fne
+fn $1(&self) -> anyhow::Result<()> {
+    Ok(())
+}
+endsnippet
+
+snippet afe
+async fn $1() -> anyhow::Result<()> {
+    Ok(())
+}
+endsnippet
+
+snippet pafe
+pub async fn $1() -> anyhow::Result<()> {
+    Ok(())
+}
+endsnippet
+
+snippet afn_ame
+async fn $1(&mut self) -> Result<(), Error> {
+    Ok(())
+}
+endsnippet
+
+snippet afn_arv
+async fn $1(&mut self) -> anyhow::Result<()> {
+    Ok(())
+}
+endsnippet
+
+snippet dernum
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
+$0
+endsnippet
+
+snippet fnS
+fn $1(self) {
+    $0
+}
+endsnippet
+
+snippet impldisp
+use std::fmt;
+
+impl fmt::Display for $1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "")
+    }
+}
+endsnippet
+
+snippet impldef
+impl Default for $1 {
+    fn default() -> Self {
+        Self {
+	    $2
+        }
+    }
+}
+endsnippet
+
+snippet testmod "" m
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn main() {
+        $0
+    }
+}
+endsnippet
+
+snippet build_hashmap
+let $1 = {
+    let mut h = HashMap::new();
+
+    h
+};
+endsnippet
+
+snippet unsimport
+#![allow(unused_imports)]
+endsnippet
+
+snippet unscrates
+ #![warn(unused_extern_crates)]
+endsnippet
+
+snippet unused
+#[allow(unused)] // TODO
+endsnippet
+
+snippet unreachable
+#[allow(unreachable_code)]
+endsnippet
+
+snippet unimpl "" m
+$0
+
+unimplemented!();
+endsnippet
+
+snippet pan "" m
+panic!();
+$0
+endsnippet
+
+snippet alldead
+#![allow(dead_code, unused_imports)] // REMOVE ME
+endsnippet
+
+snippet portablefn "" m
+#[cfg(target_os = "linux")]
+pub fn $1 {
+    $0
+}
+
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+pub fn $1 {
+}
+
+#[cfg(target_os = "windows")]
+pub fn $1 {
+}
+endsnippet
+
+snippet hashmap_entry
+use std::collections::hash_map;
+let mut item = match $1.entry($2) {
+    hash_map::Entry::Vacant(v) => v.insert($3),
+    hash_map::Entry::Occupied(o) => o.into_mut(),
+};
+endsnippet
+
+snippet btreemap_entry
+use std::collections::btree_map;
+let mut item = match $1.entry($2) {
+    btree_map::Entry::Vacant(v) => v.insert($3),
+    btree_map::Entry::Occupied(o) => o.into_mut(),
+};
+endsnippet
+
+snippet ifletret
+let $1 = if let $2($1) = self.$3 {
+    $1
+} else {
+    return Ok(())
+};
+endsnippet
+
+snippet thiserror
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Io error; {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Command error: {0}")]
+    Command(String),
+}
+
+// thiserror = "1"
+endsnippet
+
+snippet adderror
+#[error("$1 error: {0}")]
+$1(#[from] $2::Error),
+endsnippet
+
+snippet adderrcontext
+/*
+    #[error("Under {1}: {0}")]
+    Context(String, Box<Error>),
+
+    #[error("{0}")]
+    FreeText(String),
+*/
+
+pub trait AddContext<T> {
+    fn context(self, desc: &str) -> Result<T, Error>;
+}
+
+impl<T, E> AddContext<T> for Result<T, E>
+    where E: Into<Error>
+{
+    fn context(self, desc: &str) -> Result<T, Error> {
+        self.map_err(|e| Error::Context(desc.into(), Box::new(e.into())))
+    }
+}
+
+impl<T> AddContext<T> for Option<T> {
+    fn context(self, desc: &str) -> Result<T, Error> {
+        self.ok_or_else(|| Error::FreeText(desc.into()))
+    }
+}
+endsnippet
+
+snippet adderrbox
+/*
+    #[error("{0}")]
+    Boxed(Box<dyn std::error::Error>),
+
+*/
+
+impl Error {
+    pub fn boxed(e: impl std::error::Error + 'static) -> Self {
+        Error::Boxed(Box::new(e))
+    }
+}
+endsnippet
+
+snippet debugtofile
+std::fs::write("/tmp/x", &format!("{:#?}", stuff));
+endsnippet
+
+snippet thiserror_main
+fn main() {
+    match main_wrap() {
+        Ok(()) => {},
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(-1);
+        }
+    }
+}
+endsnippet
+
+snippet none2err
+.ok_or_else(|| Error::$1)
+endsnippet
+
+snippet map2err
+.map_err(|_| Error::$1)
+endsnippet
+
+snippet wraperr
+.map_err(|x| Error::$1(context, x))
+endsnippet
+
+snippet maintemplate
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[allow(unused)]
+pub struct Server {
+    pub server_addr: Option<String>,
+}
+
+
+#[derive(StructOpt, Debug)]
+#[allow(unused)]
+enum Command {
+    Server(Server)
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Opt {
+    // Flags
+
+    #[structopt(subcommand)]
+    command: Command,
+}
+
+fn main() -> anyhow::Result<()> {
+    let opt = Opt::from_args();
+    match opt.command {
+        Command::Server(..) => {
+        }
+    }
+
+    Ok(())
+}
+endsnippet
+
+snippet userpause
+    {
+        let mut s = String::new();
+        use std::io::{stdin};
+        let _ = stdin().read_line(&mut s);
+    }
+endsnippet
+
+snippet lalrpop-cargo
+[package]
+build = "build.rs"
+
+[build-dependencies]
+lalrpop = "0.17.2"
+
+[dependencies]
+lalrpop-util = "0.18.1"
+regex = "1"
+endsnippet
+
+snippet lalrpop-build
+fn main() {
+    lalrpop::process_root().unwrap();
+}
+endsnippet
+
+snippet lalrpop-root
+#![recursion_limit = "1024"]
+#![allow(unused_parens)] // Until lalrpop is fixing the warning it generates
+
+lalrpop_mod!(pub query);
+endsnippet
+
+snippet lalrpop-expr
+use crate::expr::Expr;
+
+grammar;
+
+pub expr: Expr = {
+    <e1:expr> "|" <e2:subexpr> => Expr::Or(Box::new(e1), Box::new(e2)),
+    <e:subexpr> => e,
+};
+
+subexpr : Expr = {
+    <e1:subexpr> "&" <e2:subexpr2> => Expr::And(Box::new(e1), Box::new(e2)),
+    <e:subexpr2> => e,
+};
+
+subexpr2 : Expr = {
+    "!" <e:subexpr3> => Expr::Not(Box::new(e)),
+    <e:subexpr3> => e,
+};
+
+subexpr3 : Expr = {
+    <e:lowexpr> => e,
+};
+
+lowexpr : Expr = {
+    <s:r"%([^%]|%%)+%"> => Expr::Substring(s.to_owned()),
+    "(" <e:expr> ")" => e,
+}
+endsnippet
+
+snippet lalrpop-expr
+#[derive(Debug)]
+pub enum Expr {
+    Substring(String),
+    Not(Box<Expr>),
+    And(Box<Expr>, Box<Expr>),
+    Or(Box<Expr>, Box<Expr>),
+}
+
+impl Expr {
+    pub fn parse(expr: &str) -> Result<Self, lalrpop_util::ParseError<usize, crate::parse::Token, &str>> {
+        super::parse::exprParser::new().parse(expr)
+    }
+}
+endsnippet
+
+snippet recursive_closure
+struct Closure<'a> {
+    func: &'a dyn Fn(&Closure),
+}
+
+let recursive = Closure {
+    func: &|closure| {
+        (closure.func)(closure)
+    },
+};
+(recursive.func)(&recursive);
+endsnippet
+
+snippet invert_option_result
+fn invert<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
+    x.map_or(Ok(None), |v| v.map(Some))
+}
+endsnippet
+
+snippet optionclosure
+let _ = || -> Option<_> {
+    $1
+    None::<()>
+}();
+endsnippet
+
+snippet resultclosure
+let _ = || -> Result<_, _> {
+    $1
+    Ok::<(), Error>(())
+}();
+endsnippet
+
+snippet opt_osstr_to_string
+.map(OsStr::to_string_lossy).map(String::from)
+endsnippet
+
+snippet write_to_string
+let mut bufw = BufWriter::new(Vec::new());
+///
+let output = String::from_utf8_lossy(&bufw.into_inner()?).as_ref().to_owned());
+endsnippet
+
+snippet sep
+
+///////////////////////////////////////////////////////////////////////////////
+// $0
+//
+
+endsnippet
+
+snippet lazyfromstr
+impl FromStr for $1 {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(&format!("\"{s}\""))
+    }
+}
+endsnippet
+
+snippet sillylog
+fn sillylog(content: &str) {
+    use std::io::{Write, BufWriter};
+    use std::fs::{OpenOptions};
+
+    let now = chrono::Local::now().timestamp_micros();
+    if let Ok(file ) = OpenOptions::new().write(true).create(true).append(true).open("/tmp/x") {
+        let mut file = BufWriter::new(file);
+        let _ = writeln!(&mut file, "{:?} {:?}", now, content);
+    }
+}
+endsnippet
+
+
+snippet tokioselect
+        tokio::select! {
+            //? biased;
+
+            Some(req) = self.some_incoming.recv(), if !self.some_incoming.is_closed() => {
+            }
+
+            _ = self.cancel_token.cancelled() => {
+                return false;
+            }
+        }
+
+endsnippet

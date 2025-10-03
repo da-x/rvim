@@ -1,0 +1,37 @@
+snippet stdio
+#include <stdio.h>
+${0}
+endsnippet
+
+snippet stdlib
+#include <stdlib.h>
+${0}
+endsnippet
+
+snippet unistd
+#include <unistd.h>
+${0}
+endsnippet
+
+snippet openinc
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+${0}
+endsnippet
+
+snippet mmapinc
+#include <sys/mman.h>
+${0}
+endsnippet
+
+snippet kparam
+static unsigned int $1 = 0;
+module_param($1, uint, 0644);
+endsnippet
+
+snippet if0
+#if 0
+${0}
+#endif
+endsnippet

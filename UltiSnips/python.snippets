@@ -1,0 +1,73 @@
+snippet newprog
+#!/usr/bin/env python
+# pylint: disable=all
+
+def main():
+    $0
+    pass
+
+if __name__ == "__main__":
+    main()
+endsnippet
+
+snippet interact
+import code
+code.interact(local=locals())
+endsnippet
+
+snippet tempdir
+import tempfile
+import os
+
+# Create a temporary directory
+with tempfile.TemporaryDirectory() as temp_dir:
+    print(f'Temporary directory: {temp_dir}')
+    
+    # You can create files in the temporary directory
+    temp_file_path = os.path.join(temp_dir, 'temp_file.txt')
+    with open(temp_file_path, 'w') as temp_file:
+        temp_file.write('Hello, world!')
+
+    # At this point, the temporary file is in the temporary directory
+    print(f'Temporary file: {temp_file_path}')
+    print(f'Contents: {open(temp_file_path).read()}')
+endsnippet
+
+snippet download-file
+import requests
+
+def download_file(url, target_path):
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    with open(target_path, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+# Example usage:
+download_file('http://example.com/bigfile.zip', '/path/to/destination/bigfile.zip')
+endsnippet
+
+snippet prettyprint
+pp = pprint.PrettyPrinter(depth=3)
+with open('/tmp/some-file.txt', 'w') as file:
+    pp = pprint.PrettyPrinter(stream=file)
+    pp.pprint(some_obj)
+endsnippet
+
+snippet handylog
+def log_write_append(s: str) -> None:
+    LOG_PATH = "/tmp/my-tracelog.log"
+    from datetime import datetime
+    import os
+    import threading
+    tid = threading.get_native_id()
+    flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
+    fd = os.open(LOG_PATH, flags, 0o644)
+    try:
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        pid = os.getpid()
+        prefix = f"{ts} [{pid:7d}/{tid:7d}] "
+        os.write(fd, (prefix + s + "\n").encode("utf-8"))
+    finally:
+        os.close(fd)
+endsnippet

@@ -1,0 +1,413 @@
+snippet if
+if [[ ${0} ]] ; then
+    echo ""
+fi
+endsnippet
+
+snippet timestamped
+(while [ 1 ] ; do echo command ; sleep 1; done) | awk '{ print strftime("\033[32m%Y-%m-%dT%H:%M:%S\033[0m"), $0 }'
+endsnippet
+
+snippet indented
+indented() {
+    awk '{ print strftime("    "), \$0 }'
+}
+endsnippet
+
+snippet echo-color
+echo-color() {
+    local color
+    color="\$1"
+    shift
+    echo -e "\e[\${color};40;1mscript\e[30;40;1m:\e[\${color};40;1m \$@\e[0m"
+}
+
+echo-info() {
+    echo-color 32 "\$@"
+}
+
+echo-warn() {
+    echo-color 33 "\$@"
+}
+endsnippet
+
+snippet readarray
+local $1
+if [[ -z "$inputvar" ]]; then
+    $1=()
+else
+    readarray -t $1 <<< "$inputvar"
+fi
+endsnippet
+
+
+snippet pythonscriptargs
+python2 -c "import sys; print(sys.argv[1:])" "$@"
+endsnippet
+
+snippet perlscriptargs
+perl -MData::Dumper -e '$Data::Dumper::Terse = 1; $Data::Dumper::Indent = 0; print Dumper(\@ARGV), "\n"' -- "$@"
+endsnippet
+
+snippet prelude
+#!/bin/bash
+
+set -eu
+set -o pipefail
+set +o posix
+shopt -s inherit_errexit
+
+###############################################################
+# Main functions
+###############################################################
+
+some-func() {
+    :
+}
+
+###############################################################
+# Infra
+###############################################################
+
+help() {
+    cat << EOF
+
+EOF
+}
+
+main() {
+    if [[ "\$@" == "" ]] ; then
+        help
+    else
+        local func
+        func=\$(declare -F | awk '\$0 == "declare -f '\$1'"')
+        if [[ \${func} != "" ]] && [[ \${func} != "declare -f main" ]] ; then
+            "\$@"
+        else
+            >&2 echo "script: unknown command: \${1}"
+            return 1
+        fi
+    fi
+}
+
+main "\$@"
+
+endsnippet
+
+snippet heredoc
+cat > filename << EOF
+${0}
+EOF
+endsnippet
+
+snippet pipe-heredoc-tab
+command <<- EOF
+${0}
+EOF
+endsnippet
+
+snippet pipe-noeval-heredoc-tab
+command <<- "EOF"
+${0}
+EOF
+endsnippet
+
+snippet trace
+_trace_to_file() {
+    export PS4='\$(date "+%Y.%m.%d-%H:%M:%S.%N") \${BASH_SOURCE}:\${FUNCNAME[0]:+\${FUNCNAME[0]}():}\${LINENO}: '
+    exec 3<> \$1
+    BASH_XTRACEFD=3
+    set -x
+}
+endsnippet
+
+snippet trace-pretty-stdout
+PS4='\033[38;5;237m$(date "+%Y.%m.%d-%H:%M:%S.%N" | cut -c-23) \033[38;5;243m${BASH_SOURCE}\033[38;5;237m:${FUNCNAME[0]:+${FUNCNAME[0]}():}\033[38;5;243m${LINENO}\033[38;5;237m: \033[00m'
+endsnippet
+
+snippet rematch
+if [[ "\${arg}" =~ ^root=(.*)$ ]]; then
+    echo "\${BASH_REMATCH[1]}"
+fi
+endsnippet
+
+snippet arrayiter
+local key
+for key in "\${!array[@]}"; do
+    local value=\${array[\${key}]}
+done
+endsnippet
+
+snippet escapeargs
+escapeargs() {
+    local i
+    for i in "$@"; do
+        printf " %s" \'
+        printf "%s" "$i" | sed -E "s#'#'\\\''#g"
+        printf "%s" \'
+    done
+}
+endsnippet
+
+snippet awkstdin
+    awk -f - ${inputfile} << EOF
+BEGIN { max=0 } {
+    if (match(\$1, /^Patch([0-9]+)/, arr)) {
+        if (arr[1] > max) max = arr[1];
+    }
+} END { print max }
+EOF
+endsnippet
+
+snippet array-pop
+unset 'array[-1]'
+endsnippet
+
+snippet argparse
+local interactive=0
+local positional=()
+
+while [[ \$# != 0 ]] ; do
+    if [[ "\$1" =~ ^--(.*)\$ ]] ; then
+        shift
+        local param
+        param="\${BASH_REMATCH[1]}"
+        case \${param} in
+            interactive) interactive=1 ;;
+            *) "invalid parameter \${param}"; return 1 ;;
+        esac
+    else
+        positional+=("\$1")
+        shift
+    fi
+done
+
+set -- "\${positional[@]}"
+endsnippet
+
+snippet argparse-elab
+main-params-parse() {
+    local _verbose=0
+    local _debug=0
+
+    while [[ \$# != 0 ]] ; do
+        if [[ \$1 =~ ^-[a-zA-Z0-9]+\$ ]] ; then
+	    for ((i=2;i<=\${#1};i++)); do # Iterate characters
+	        local c=\${1:\$i-1:1}
+	        case \${1:\$i-1:1} in
+		    v) _verbose=1 ;;
+		    d) _debug=1 ;;
+		    *) echo "Invalid parameter \${c}" ; return -1 ;;
+	        esac
+	    done
+	    shift
+        elif [[ "\$1" == "--verbose" ]] ; then
+	    _verbose=1
+	    shift
+	    continue
+        elif [[ "\$1" == "--debug" ]] ; then
+	    _debug=\$1
+	    shift
+	    continue
+        fi
+        break # Continue to positional arguments
+    done
+
+    verbose=\${_verbose}
+    remaining_args=("\$@")
+}
+
+main-params-parse "\$@" # Outputs remaining_args
+set +u ; set -- "\${remaining_args[@]}" ; set -u
+endsnippet
+
+snippet perline-parse
+while read a b ; do
+    echo ${a} ${b}
+done < <(command)
+endsnippet
+
+snippet sigint
+trap ctrl_c INT
+
+function ctrl_c() {
+    ${0}
+}
+endsnippet
+
+snippet stderr
+>&2 echo "error"
+endsnippet
+
+snippet tempdir
+local tmp_dir=$(mktemp -d -t prefix-XXXXXXXXXX)
+# Stuff
+rm -rf ${tmp_dir}
+endsnippet
+
+snippet oldarrayeval
+\${${1}[@]+"${${1}[@]}"}
+endsnippet
+
+
+snippet bashrpc
+__receiver-rpc() {
+    # Decode command and args
+    local decoded_args=()
+    while IFS= read var ; do
+        decoded_args+=("\${var}")
+    done < <(perl -e 'print pack("H*", \$_), "\n" for @ARGV' "\$@")
+
+    # Execute them
+    "\${decoded_args[@]}"
+}
+
+__this-script-with-copy() {
+    if [[ "\${THIS_SCRIPT:-}" != "" ]] ; then
+        echo THIS_SCRIPT=\${THIS_SCRIPT}
+        echo \${THIS_SCRIPT} | perl -pE '\$_=pack("H*",\$_)' | tr -d '\240'
+    else
+        echo THIS_SCRIPT=\$(perl -pE '\$_=unpack("H*",\$_)' \${BASH_SOURCE})
+        cat \${BASH_SOURCE}
+    fi
+}
+
+rpc() {
+    local node
+    node="\$1"
+    shift
+
+    __this-script-with-copy | \
+        ssh \${node} 'bash -s -- __receiver-rpc '\$(perl -e 'print unpack("H*", \$_), "\n" for @ARGV' "\$@")
+}
+endsnippet
+
+snippet spawnjobs
+local pids=()
+local pid_work=()
+local work
+
+for work in a b c; do
+    some-work &
+    pids+=(\$!)
+    pid_work+=("${work}")
+done
+
+local idx
+local failed_names=()
+for idx in "\${!pids[@]}"; do
+    local e
+
+    set +e
+    wait \${pids[\${idx}]}
+    e=\$?
+    set -e
+
+    if [[ "\${e}" != "0" ]] ; then
+        failed_names+=(\${pid_work[\${idx}]})
+    fi
+done
+
+if [[ \${failed_names[@]+"\${failed_names[@]}"} != "" ]] ; then
+    echo "Some failed: \${failed_names[@]}"
+    return 1
+fi
+echo All succeeded
+endsnippet
+
+snippet clean-background-on-termination
+function leave() {
+    kill $(jobs -p)
+    wait $(jobs -p) 2>/dev/null || true
+}
+trap leave EXIT
+endsnippet
+
+snippet scriptpath
+local scriptpath
+scriptpath=$(dirname $(realpath ${BASH_SOURCE}))
+endsnippet
+
+snippet runparameterized
+#!/bin/bash
+
+# export KEY=VAL
+
+exec $(realpath $(dirname ${BASH_SOURCE}))/run "\$@"
+endsnippet
+
+snippet params-ssh-relay
+local params
+params=$(python3 -c "import sys; print(repr(sys.argv[1:]).encode('utf-8').hex())" "$@")
+ssh -t ${host} "exec python3 -c 'import sys, os; a = eval(bytes.fromhex(sys.argv[1])); os.execlp(a[0], *a)' ${params}"
+endsnippet
+
+snippet to-hex
+$(echo -n "$1" | perl -ne 'print unpack("H*", \$_)')
+endsnippet
+
+snippet from-hex
+"$(echo -n "$1" | perl -ne 'print pack("H*", \$_)')"
+endsnippet
+
+snippet embed-python3
+python3 -c "
+import sys, os
+print('hello')
+"
+endsnippet
+
+snippet is-empty-dir
+is-empty-dir() {
+    if [[ "\$(find "$1" -maxdepth 2 -mindepth 1 | wc -l)" == "0" ]] ; then return 0; fi
+    return 1
+}
+endsnippet
+
+snippet detached
+__run-detached() {
+    tmp_dir_to_delete="\$1"
+    shift
+
+    function leave() {
+        case ${tmp_dir_to_delete} in
+            /tmp/*)
+                rm -rf ${tmp_dir_to_delete}
+                ;;
+        esac
+    }
+    trap leave EXIT
+
+    "$@"
+}
+
+detached() {
+    # Copy the script aside and run it from tmp
+
+    local tmp_dir=$(mktemp -d -t syslab-XXXXXXXXXX)
+    cp ${BASH_SOURCE} ${tmp_dir}/syslab
+    exec ${tmp_dir}/syslab __run-detached ${tmp_dir} "$@"
+}
+endsnippet
+
+snippet sequence
+main() {
+    local a=()
+
+    while [[ \$# != 0 ]] ; do
+        if [[ "$1" =~ ^--$ ]] ; then
+            "${a[@]}"
+            shift
+            a=()
+            continue
+        fi
+
+        a+=("\$1")
+        shift
+    done
+
+    "${a[@]}"
+}
+
+main "$@"
+endsnippet

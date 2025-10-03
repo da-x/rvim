@@ -1,0 +1,13 @@
+snippet if
+if [[ ${0} ]] ; then
+    echo ""
+fi
+endsnippet
+
+snippet sigint
+trap ctrl_c INT
+
+function ctrl_c() {
+    ${0}
+}
+endsnippet

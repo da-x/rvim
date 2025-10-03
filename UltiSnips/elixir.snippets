@@ -1,0 +1,91 @@
+snippet errmod
+defmodule $1 do
+  @moduledoc """
+  """
+  defexception [:message]
+end
+endsnippet
+
+snippet warnstr
+Logger.warning("#{inspect($1)}")
+endsnippet
+
+snippet warnstp
+Logger.warning("#{inspect($1, pretty: true)}")
+endsnippet
+
+snippet htmlif
+<%= if $1 do %>
+<% else %>
+<% end %>
+endsnippet
+
+snippet htmlfor
+<%= for $1 <- $2 do %>
+<% end %>
+endsnippet
+
+snippet htmlcase
+<%= case $1 do %>
+  <% {:error, $2} -> %>
+    <div class="alert alert-info" />
+  <% _ -> %>
+    <%= nil %>
+<% end %>
+endsnippet
+
+snippet trydo
+try do $1 rescue _ -> $2 end
+endsnippet
+
+snippet queryp
+defp by_status(query, something) when is_binary(something) do
+    from s in query, where: s.something == ^something
+end
+endsnippet
+
+snippet ectoschema
+defmodule $1 do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "volumes" do
+    field :name, :string
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(item, attrs) do
+    cast_attrs = [
+    ]
+    required_attrs = cast_attrs
+
+    item
+    |> cast(attrs, cast_attrs)
+    |> validate_required(required_attrs)
+  end
+
+  def new(attrs), do: %__MODULE__{} |> changeset(attrs)
+end
+endsnippet
+
+snippet assigner
+socket = socket
+  |> assign(:something, value)
+endsnippet
+
+snippet withs
+res =
+  with {:a, {:ok, key1}} <-
+       {:a, op_a()},
+       {:b, {:ok, key2}} <-
+       {:b, op_b()}
+  do
+    {:ok}
+  else
+    e -> {:generic, e}
+  end
+endsnippet
+
+snippet unmatchedfn
+def $1(_), do: {:error, :pattern_matching}
+endsnippet

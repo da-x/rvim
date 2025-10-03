@@ -1231,6 +1231,8 @@ require('lazy').setup({
     event = 'VimEnter',
     version = '1.*',
     dependencies = {
+      -- UltiSnips support
+      'SirVer/ultisnips',
       -- Snippet Engine
       {
         'L3MON4D3/LuaSnip',
@@ -1323,12 +1325,18 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev', 'knots' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev', 'knots', 'ultisnips' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
           knots = {
             name = 'Knots',
             module = 'knots',
+            opts = {},
+          },
+          ultisnips = {
+            name = 'UltiSnips',
+            module = 'blink.cmp.sources.ultisnips',
+            score_offset = 90,
             opts = {},
           },
           buffer = {
@@ -1796,6 +1804,11 @@ require('lazy').load { plugins = {
   'local_vimrc',
   'vim-rooter',
 } }
+
+-- UltiSnips configuration
+vim.g.UltiSnipsExpandTrigger = '<Tab>'
+vim.g.UltiSnipsJumpForwardTrigger = '<Tab>'
+vim.g.UltiSnipsJumpBackwardTrigger = '<S-Tab>'
 
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
