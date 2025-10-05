@@ -57,9 +57,11 @@ endfunction
 
 function! SetSystemClipboard(string) abort
   call ReloadEnvironment()
-  let l:display = system('echo $DISPLAY')
-  let l:helper = '$HOME/.vim_runtime/bin/set-all-clipboard.py'
-  if !has('nvim') || !exists(l:helper) || l:display ==# ''
+  let l:display = system('echo $WAYLAND_DISPLAY')
+  let l:ssh_custom_callback = system('echo $SSH_CUSTOM_CALLBACK')
+  let l:helper = $HOME."/.vim_runtime/bin/set-all-clipboard.py"
+
+  if !has('nvim') || !filereadable(l:helper) || (l:display ==# '' && l:ssh_custom_callback ==# '')
     return
   endif
 
