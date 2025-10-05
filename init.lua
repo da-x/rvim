@@ -1396,6 +1396,8 @@ require('lazy').setup({
       local function apply_custom_colors()
         vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
         vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
+        -- Glowing red end-of-line whitespace
+        vim.api.nvim_set_hl(0, 'ExtraWhitespace', { bg = '#ff0000', fg = '#ff4444', underline = true, bold = true })
         -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
         -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
       end
@@ -1806,9 +1808,20 @@ require('lazy').load { plugins = {
 } }
 
 -- UltiSnips configuration
-vim.g.UltiSnipsExpandTrigger = '<Tab>'
-vim.g.UltiSnipsJumpForwardTrigger = '<Tab>'
-vim.g.UltiSnipsJumpBackwardTrigger = '<S-Tab>'
+vim.g.UltiSnipsExpandTrigger = '<C-q>'
+vim.g.UltiSnipsListSnippets = '<C-j>'
+vim.g.UltiSnipsJumpForwardTrigger = '<C-e>'
+vim.g.UltiSnipsJumpBackwardTrigger = '<C-f>'
+vim.g.UltiSnipsRemoveSelectModeMappings = 0
+
+-- Function to edit UltiSnips for current filetype
+function MyEditUltiSnips()
+  local filename = '~/.vim_runtime/UltiSnips/' .. vim.bo.filetype .. '.snippets'
+  vim.cmd('edit ' .. filename)
+end
+
+-- Keymap for editing UltiSnips
+vim.keymap.set('n', '<leader>sm', MyEditUltiSnips, { desc = 'Edit UltiSnips for current filetype' })
 
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')

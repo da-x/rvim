@@ -55,14 +55,14 @@ function Source:resolve(item, callback)
 end
 
 function Source:execute(item, callback)
-  -- Trigger UltiSnips expansion using tab key simulation
+  -- Trigger UltiSnips expansion using Ctrl-Q
   if item.data and item.data.trigger then
     vim.schedule(function()
       -- Clear the line and insert the trigger
       vim.cmd('normal! diw')
       vim.api.nvim_put({item.data.trigger}, 'c', true, true)
-      -- Trigger expansion with tab
-      vim.fn.feedkeys('\t', 'n')
+      -- Trigger expansion with Ctrl-Q
+      vim.fn.feedkeys('\17', 'n') -- \17 is Ctrl-Q
     end)
   end
   
