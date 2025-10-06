@@ -269,9 +269,9 @@ vim.keymap.set('n', '<leader>yd', function()
 end, { desc = 'Yank current directory to system clipboard' })
 
 -- Search and select current word/selection (like * but without moving cursor)
-vim.keymap.set('n', '<A-t>', '*``', { desc = 'Search current word without moving cursor' })
-vim.keymap.set('v', '<A-t>', '*``', { desc = 'Search selection without moving cursor' })
-vim.keymap.set('i', '<A-t>', '<C-c>*``', { desc = 'Search current word without moving cursor' })
+vim.keymap.set('n', '<A-t>', '*``', { desc = 'Search current word without moving cursor', remap = true })
+vim.keymap.set('v', '<A-t>', '<leader><C-space>*``', { desc = 'Search selection without moving cursor', remap = true })
+vim.keymap.set('i', '<A-t>', '<C-c><leader><C-space>*``', { desc = 'Search current word without moving cursor', remap = true })
 
 -- Make Backspace behave like it normally does in normal mode (delete char before cursor)
 vim.keymap.set('n', '<BS>', '"_X', { desc = 'Delete character before cursor' })
