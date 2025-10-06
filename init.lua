@@ -1398,6 +1398,15 @@ require('lazy').setup({
         vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
         -- Glowing red end-of-line whitespace
         vim.api.nvim_set_hl(0, 'ExtraWhitespace', { bg = '#ff0000', fg = '#ff4444', underline = true, bold = true })
+
+        -- Orange markdown titles
+        vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ffa850', bold = true })
+        vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ffb850', bold = true })
+        vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ffc850', bold = true })
+        vim.api.nvim_set_hl(0, '@markup.heading.4.markdown', { fg = '#ffd850', bold = true })
+        vim.api.nvim_set_hl(0, '@markup.heading.5.markdown', { fg = '#ffe850', bold = true })
+        vim.api.nvim_set_hl(0, '@markup.heading.6.markdown', { fg = '#fff850', bold = true })
+
         -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
         -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
       end
