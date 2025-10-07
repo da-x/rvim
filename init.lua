@@ -515,9 +515,9 @@ vim.api.nvim_create_autocmd('BufRead', {
     vim.keymap.set('n', 'd', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
     vim.keymap.set('n', 'k', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
 
-    -- Movement shortcuts
-    vim.keymap.set('n', '<C-Up>', '<M-k>', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
-    vim.keymap.set('n', '<C-Down>', '<M-j>', vim.tbl_extend('force', opts, { desc = 'Move line down' }))
+    -- Movement shortcuts - use vim-move plugin directly
+    vim.keymap.set('n', '<C-Up>', '<Plug>MoveLineUp', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
+    vim.keymap.set('n', '<C-Down>', '<Plug>MoveLineDown', vim.tbl_extend('force', opts, { desc = 'Move line down' }))
     vim.keymap.set('n', '<M-PageUp>', '<M-k>', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
     vim.keymap.set('n', '<M-PageDown>', '<M-j>', vim.tbl_extend('force', opts, { desc = 'Move line down' }))
 
