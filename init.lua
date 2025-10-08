@@ -219,10 +219,11 @@ vim.keymap.set('n', '<F9>', function()
   vim.fn.MyGitGrep(vim.fn.expand '<cword>')
 end, { desc = 'Git grep current word' })
 vim.keymap.set('n', '<C-F9>', ':Gg ', { desc = 'Git grep prompt' })
-vim.keymap.set('n', '<Tab><F9>', function()
+vim.keymap.set('n', '<Tab>', '<C-w>', { desc = 'Shorter <C-w>', remap = true })
+vim.keymap.set('n', '<S-F9>', function()
   require('telescope.builtin').live_grep { default_text = vim.fn.expand '<cword>' }
 end, { desc = 'Ripgrep current word' })
-vim.keymap.set('n', '<Tab><C-F9>', function()
+vim.keymap.set('n', '<M-F9>', function()
   require('telescope.builtin').live_grep()
 end, { desc = 'Ripgrep prompt' })
 
@@ -333,7 +334,7 @@ end, { desc = 'Search/replace with empty replacement', expr = true })
 
 -- Buffer switcher with F2
 vim.keymap.set('n', '<F2>', function()
-  require('telescope.builtin').buffers()
+  require('telescope.builtin').buffers { sort_mru = true, sort_lastused = true }
 end, { desc = 'Switch buffers' })
 
 -- Recent files (MRU) with Ctrl-F2
@@ -1428,6 +1429,9 @@ require('lazy').setup({
         vim.api.nvim_set_hl(0, '@markup.heading.4.markdown', { fg = '#ffd850', bold = true })
         vim.api.nvim_set_hl(0, '@markup.heading.5.markdown', { fg = '#ffe850', bold = true })
         vim.api.nvim_set_hl(0, '@markup.heading.6.markdown', { fg = '#fff850', bold = true })
+
+        -- Dark markdown link URLs (visible but very dark)
+        vim.api.nvim_set_hl(0, '@markup.link.url.markdown_inline', { fg = '#006622' })
 
         -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
         -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers

@@ -220,13 +220,18 @@ function! MyMarkdownSettings()
   
   " Custom highlight overrides for markdown based on :Inspect output
   call nvim_set_hl(0, '@markup.raw.markdown_inline', {'fg': '#9e64ff', 'bg': '#1a1a1a'})
+  call nvim_set_hl(0, '@markup.link.url', {'fg': '#61af61'})
 
 
   Indent4Spaces
   setl formatlistpat+=\\\|^\\s*\\*\\s*
   setl comments=fb:>,fb:*,fb:+,fb:-
   setl formatoptions-=q
-  setl conceallevel=3
+  setl conceallevel=0
+
+  " Syntax highlighting for bare URLs
+  syntax match markdownBareUrl '\v<https?://[^ \t\n\r\[\]()]*[^ \t\n\r\[\]().,;:!?]'
+  highlight link markdownBareUrl @markup.link.url
 
   syntax sync fromstart
 endfunction
