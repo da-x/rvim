@@ -276,6 +276,25 @@ vim.keymap.set('i', '<A-t>', '<C-c><leader><C-space>*``', { desc = 'Search curre
 -- Make Backspace behave like it normally does in normal mode (delete char before cursor)
 vim.keymap.set('n', '<BS>', '"_X', { desc = 'Delete character before cursor' })
 
+-- Smart Tab behavior in insert mode - respects current indentation settings
+vim.keymap.set('i', '<Tab>', function()
+  if vim.bo.expandtab then
+    -- Use spaces based on softtabstop or shiftwidth
+    local spaces = vim.bo.softtabstop > 0 and vim.bo.softtabstop or vim.bo.shiftwidth
+    return string.rep(' ', spaces)
+  else
+    -- Use actual tab character
+    return '\t'
+  end
+end, { desc = 'Insert tab/spaces based on current indentation mode', expr = true })
+
+-- UltiSnips configuration
+vim.g.UltiSnipsExpandTrigger = '<C-q>'
+vim.g.UltiSnipsListSnippets = '<C-j>'
+vim.g.UltiSnipsJumpForwardTrigger = '<C-e>'
+vim.g.UltiSnipsJumpBackwardTrigger = '<C-f>'
+vim.g.UltiSnipsRemoveSelectModeMappings = 0
+
 -- FZF spell suggestions (replaces default z= spell menu)
 vim.keymap.set('n', 'z=', function()
   vim.fn.FzfSpell()
@@ -611,6 +630,9 @@ vim.api.nvim_create_user_command('SetupKnotBindings', function()
   end, vim.tbl_extend('force', opts, { desc = 'Pick URL from current knot' }))
 
   -- Navigation
+  vim.keymap.set('n', '<C-n><Backspace>', function()
+    vim.fn['knot#goToBacklinks']()
+  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
   vim.keymap.set('n', '<C-h>', function()
     vim.fn['knot#goToBacklinks']()
   end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
@@ -1816,13 +1838,6 @@ require('lazy').load { plugins = {
   'vim-rooter',
 } }
 
--- UltiSnips configuration
-vim.g.UltiSnipsExpandTrigger = '<C-q>'
-vim.g.UltiSnipsListSnippets = '<C-j>'
-vim.g.UltiSnipsJumpForwardTrigger = '<C-e>'
-vim.g.UltiSnipsJumpBackwardTrigger = '<C-f>'
-vim.g.UltiSnipsRemoveSelectModeMappings = 0
-
 -- Function to edit UltiSnips for current filetype
 function MyEditUltiSnips()
   local filename = '~/.vim_runtime/UltiSnips/' .. vim.bo.filetype .. '.snippets'
@@ -1835,5 +1850,11 @@ vim.keymap.set('n', '<leader>sm', MyEditUltiSnips, { desc = 'Edit UltiSnips for 
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
+-- How to inspect binds?
+--
+-- Example:
+--
+-- nvim --headless -c "verbose imap <Tab>" -c 'qa!'
+--
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
