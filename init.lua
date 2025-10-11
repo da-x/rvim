@@ -360,7 +360,7 @@ vim.keymap.set('n', '<leader>eg', '<cmd>e! ~/.files/gitconfig<cr>', { desc = 'Ed
 vim.keymap.set('n', '<leader>et', '<cmd>e! ~/.tmux.conf<cr>', { desc = 'Edit tmux config' })
 vim.keymap.set('n', '<leader>ez', '<cmd>e! ~/.zsh/zshrc.sh<cr>', { desc = 'Edit zsh config' })
 vim.keymap.set('n', '<leader>e_', '<cmd>e! ~/.vim_runtime/project-specific.vim<cr>', { desc = 'Edit project-specific vim config' })
-vim.keymap.set('n', '<leader>ef', '<cmd>ToggleFileExplorer<cr>', { desc = 'Toggle file explorer' })
+vim.keymap.set('n', '<leader>ef', '<cmd>NvimTreeFindFileToggle<cr>', { desc = 'Toggle file explorer' })
 
 -- Eat plugin key bindings (F8 family and leader+o combinations)
 vim.keymap.set('n', '<F8>', function()
@@ -483,6 +483,19 @@ vim.api.nvim_create_autocmd('BufReadPost', {
   end,
 })
 
+-- VimScript files: 2-space indentation
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'vim',
+  desc = 'Set 2-space indentation for VimScript files',
+  group = vim.api.nvim_create_augroup('vim-indent', { clear = true }),
+  callback = function()
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.tabstop = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.expandtab = true
+  end,
+})
+
 -- Git commit buffer mappings
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'gitcommit',
@@ -550,9 +563,15 @@ vim.api.nvim_create_autocmd('BufRead', {
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'markdown',
   desc = 'Setup markdown key bindings',
-  group = vim.api.nvim_create_augroup('markdown-bindings', { clear = true }),
+  group = vim.api.nvim_create_augroup('my-markdown-bindings', { clear = true }),
   callback = function(ev)
     local opts = { buffer = ev.buf }
+
+    -- Enable proper list formatting and auto-indent
+    vim.opt_local.formatoptions:append 'ro' -- Auto-insert comment leader on <CR> and 'o'
+    vim.opt_local.comments = 'b:-,b:*,b:+,b:1.' -- Define list markers as comments
+    vim.opt_local.autoindent = true
+    vim.opt_local.smartindent = false -- Disable smart indent for markdown
 
     -- Markdown-specific shortcuts
     vim.keymap.set('i', '<A-e>d', '<C-c><A-e>d', vim.tbl_extend('force', opts, { desc = 'Insert markdown date' }))
@@ -1499,7 +1518,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'rust' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1510,6 +1529,14 @@ require('lazy').setup({
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+      incremental_selection = {
+        enable = true,
+        keymaps = {
+          init_selection = '+',
+          node_incremental = '+',
+          node_decremental = '-',
+        },
+      },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
@@ -1535,23 +1562,78 @@ require('lazy').setup({
   -- require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
-  { -- Expand visual selection incrementally
-    'terryma/vim-expand-region',
-    keys = {
-      { '+', '<Plug>(expand_region_expand)', mode = { 'n', 'v' }, desc = 'Expand selection' },
-      { '_', '<Plug>(expand_region_shrink)', mode = 'v', desc = 'Shrink selection' },
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    ft = { 'markdown', 'quarto' },
+    opts = {
+      heading = {
+        icons = false,
+      },
+      indent = {
+        -- Mimic org-indent-mode behavior by indenting everything under a heading based on the
+        -- level of the heading. Indenting starts from level 2 headings onward by default.
+
+        -- Turn on / off org-indent-mode.
+        enabled = true,
+        -- Additional modes to render indents.
+        render_modes = false,
+        -- Amount of additional padding added for each heading level.
+        per_level = 2,
+        -- Heading levels <= this value will not be indented.
+        -- Use 0 to begin indenting from the very first level.
+        skip_level = 1,
+        -- Do not indent heading titles, only the body.
+        skip_heading = false,
+        -- Prefix added when indenting, one per level.
+        icon = '▎',
+        -- Priority to assign to extmarks.
+        priority = 0,
+        -- Applied to icon.
+        highlight = 'RenderMarkdownIndent',
+      },
+      win_options = {
+        conceallevel = { default = vim.o.conceallevel, rendered = 0 },
+        concealcursor = { default = vim.o.concealcursor, rendered = '' },
+      },
     },
   },
 
   { -- Enhanced markdown support
-    'da-x/vim-markdown',
+    'tadmccorkle/markdown.nvim',
     ft = 'markdown',
     config = function()
-      -- Open links with Enter in markdown files
-      vim.keymap.set('n', '<CR>', 'gx', {
-        buffer = true,
-        desc = 'Open link under cursor',
-      })
+      require('markdown').setup {
+        mappings = {
+          inline_surround_toggle = 'gs',
+          inline_surround_toggle_line = 'gss',
+          inline_surround_delete = 'ds',
+          inline_surround_change = 'cs',
+          link_add = 'gl',
+          link_follow = false,
+          go_curr_heading = ']c',
+          go_parent_heading = ']p',
+          go_next_heading = ']]',
+          go_prev_heading = '[[',
+        },
+        on_attach = function(bufnr)
+          local map = vim.keymap.set
+          local opts = { buffer = bufnr }
+          map({ 'n', 'i' }, '<C-\\>', '<Cmd>MDListItemBelow<CR>', opts)
+          map({ 'n', 'i' }, '<M-e>\\', '<Cmd>MDListItemAbove<CR>', opts)
+
+          -- Add sub-bullet (indented list item)
+          map({ 'n', 'i' }, '<C-Insert>', function()
+            -- Create a new list item below current one
+            vim.cmd 'MDListItemBelow'
+            -- Add indentation (4 spaces for sub-bullet)
+            local line = vim.api.nvim_get_current_line()
+            vim.api.nvim_set_current_line('    ' .. line)
+            -- Position cursor at end and enter insert mode
+            vim.cmd 'startinsert!'
+            vim.api.nvim_win_set_cursor(0, { vim.api.nvim_win_get_cursor(0)[1], vim.fn.col '$' })
+          end, vim.tbl_extend('force', opts, { desc = 'Add sub-bullet' }))
+        end,
+      }
     end,
   },
 
@@ -1840,6 +1922,7 @@ require('lazy').load { plugins = {
   'fzf.vim',
   'local_vimrc',
   'vim-rooter',
+  'markdown.nvim',
 } }
 
 -- Function to edit UltiSnips for current filetype

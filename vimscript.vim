@@ -196,28 +196,10 @@ endfunction
 " =============================================================================
 " Markdown
 
-let g:vim_markdown_no_default_key_mappings = 1
-let g:vim_markdown_folding_disabled = 1
-let g:vim_markdown_no_extensions_in_markdown = 1
-let g:vim_markdown_auto_insert_bullets = 0
-let g:vim_markdown_new_list_item_indent = 0
-let g:vim_markdown_follow_anchor = 1
-let g:vim_markdown_spell_title = 0
-
-function! MyFixupMarkdownLink(text)
-  let l:text = a:text
-  let l:matchurl = matchlist(a:text, '\V\^\(\.\*\).md')
-  if l:matchurl != []
-    let l:text = l:matchurl[1]
-  endif
-  return knot#ConvertIdLink(expand(l:text))
-endfunction
-
 function! MyMarkdownSettings()
   setlocal spell
-  let b:Markdown_LinkFilter = function('MyFixupMarkdownLink')
   let b:Markdown_PerFileBackgroundSaving = synIDattr(synIDtrans(hlID("Normal")), "bg", "gui")
-  
+
   " Custom highlight overrides for markdown based on :Inspect output
   call nvim_set_hl(0, '@markup.raw.markdown_inline', {'fg': '#9e64ff', 'bg': '#1a1a1a'})
   call nvim_set_hl(0, '@markup.link.url', {'fg': '#61af61'})
@@ -396,23 +378,33 @@ function! MyMarkdownDragDown() range
   call MyMarkdownSetupVisualModeExitOnce()
 endfunction
 
+function! LeaveKnotBuffer()
+  if &filetype !=# 'markdown'
+    return
+  endif
+  if exists('b:orig_normal_bg')
+    execute "highlight Normal guibg=".b:orig_normal_bg
+    unlet! b:orig_normal_bg
+  endif
+endfunction
+
 function! InKnotBuffer()
   if &filetype !=# 'markdown'
-      return
+    return
   endif
 
   call knot#InstallHooks()
 
-  " Make the knots related to the current desktop one with a special background color
-  if exists('b:Markdown_PerFileBackgroundSaving')
-    if knot#currentFullID() != knot#currentDesktopKnotID()
-      let l:color = "#150015"
-      execute "highlight Normal guibg=".l:color
-      execute "highlight EndOfBuffer guibg=".l:color
-    endif
+  if knot#currentFullID() != knot#currentDesktopKnotID() && !exists('b:orig_normal_bg')
+    let b:orig_normal_bg = synIDattr(hlID('Normal'), 'bg', 'gui')
+    let l:color = "#150015"
+    execute "highlight Normal guibg=".l:color
   endif
 
-  let b:Markdown_LinkFilter = function('knot#ConvertIdLink')
+  augroup MarkdownBufferHighlight
+    autocmd! * <buffer>
+    autocmd BufLeave <buffer> call LeaveKnotBuffer()
+  augroup END
 
   " Setup key bindings using Lua command
   SetupKnotBindings
@@ -431,8 +423,8 @@ endfunction
 function! FzfSpell()
   let suggestions = spellsuggest(expand("<cword>"))
   return fzf#run({
-    \ 'source': suggestions, 
-    \ 'sink': function("FzfSpellSink"), 
+    \ 'source': suggestions,
+    \ 'sink': function("FzfSpellSink"),
     \ 'down': 10,
     \ 'options': '--bind=esc:cancel'
     \ })
