@@ -569,6 +569,27 @@ vim.api.nvim_create_autocmd('BufRead', {
   end,
 })
 
+-- blink.cmp accept
+
+local function blink_cmp_enter(cmp)
+  if not require('blink.cmp').is_visible() or vim.bo.filetype == 'markdown' then
+    cmp.cancel()
+    vim.api.nvim_feedkeys('\r', 'n', true)
+  else
+    cmp.accept()
+  end
+end
+
+local function accept_blink_cmcp(cmp)
+  if not require('blink.cmp').is_visible() and vim.bo.filetype == 'gitcommit' then
+    vim.schedule(function()
+      vim.fn.EndCommitMessageEdit()
+    end)
+  else
+    cmp.accept()
+  end
+end
+
 -- Markdown buffer mappings
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'markdown',
@@ -1339,27 +1360,9 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'super-tab',
-        ['<CR>'] = {
-          function(cmp)
-            if not require('blink.cmp').is_visible() or vim.bo.filetype == 'markdown' then
-              cmp.cancel()
-              vim.api.nvim_feedkeys('\r', 'n', true)
-            else
-              cmp.accept()
-            end
-          end,
-        },
-        ['<M-T-PageUp>'] = {
-          function(cmp)
-            if not require('blink.cmp').is_visible() and vim.bo.filetype == 'gitcommit' then
-              vim.schedule(function()
-                vim.fn.EndCommitMessageEdit()
-              end)
-            else
-              cmp.accept()
-            end
-          end,
-        },
+        ['<CR>'] = { blink_cmp_enter },
+        ['<M-T-PageUp>'] = { accept_blink_cmcp },
+        ['<C-a>'] = { accept_blink_cmcp },
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
       },
