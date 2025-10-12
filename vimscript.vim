@@ -218,10 +218,21 @@ function! MyMarkdownSettings()
   syntax sync fromstart
 endfunction
 
+function! MyShellSettings()
+  Indent4Spaces
+endfunction
+
 augroup MarkdownEditSettings
   autocmd!
 
   autocmd FileType markdown call MyMarkdownSettings()
+augroup END
+
+augroup ShellEditSettings
+  autocmd!
+
+  autocmd FileType sh call MyShellSettings()
+  autocmd FileType zsh call MyShellSettings()
 augroup END
 
 " =============================================================================

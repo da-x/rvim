@@ -521,13 +521,13 @@ vim.api.nvim_create_autocmd('FileType', {
     -- Abort commit (delete commit message file)
     vim.keymap.set(
       'n',
-      '<C-q>',
+      '<C-Del>',
       '<cmd>%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>',
       vim.tbl_extend('force', opts, { desc = 'Abort commit' })
     )
     vim.keymap.set(
       'i',
-      '<C-q>',
+      '<C-Del>',
       '<C-c>:%delete | w | bd | echo "Commit aborted - all files remain staged"<cr>',
       vim.tbl_extend('force', opts, { desc = 'Abort commit' })
     )
