@@ -261,6 +261,16 @@ vim.keymap.set('v', '<C-Space>', '<Esc>', { desc = 'Exit visual mode' })
 -- Yank with Enter in visual mode and move to end of selection
 vim.keymap.set('v', '<CR>', 'y`>', { desc = 'Yank selection and move to end' })
 
+-- Surround visual selection quick surround actions
+vim.keymap.set('v', ')', '<Esc>`>a)<Esc>`<i(<Esc>', { desc = 'Surround selection with parentheses' })
+vim.keymap.set('v', ']', '<Esc>`>a]<Esc>`<i[<Esc>', { desc = 'Surround selection with parentheses' })
+vim.keymap.set('v', '}', '<Esc>`>a}<Esc>`<i{<Esc>', { desc = 'Surround selection with parentheses' })
+vim.keymap.set('v', '""', '<Esc>`>a"<Esc>`<i"<Esc>', { desc = 'Surround selection with double quotes' })
+vim.keymap.set('v', "''", "<Esc>`>a'<Esc>`<i'<Esc>", { desc = 'Surround selection with single quotes' })
+
+-- Select current word with +
+vim.keymap.set('n', '+', 'viw', { desc = 'Select current word' })
+
 -- System clipboard yank operations
 vim.keymap.set('n', '<leader>yf', function()
   vim.fn.YankCurrentFilename()
