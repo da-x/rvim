@@ -133,6 +133,35 @@ vim.keymap.set('n', '<leader>q', smart_setloclist, { desc = 'Open diagnostic [Q]
 vim.keymap.set('n', '<leader>Q', '<cmd>lclose<cr>', { desc = 'Close location list' })
 vim.keymap.set('n', '<leader>w', save_and_refresh_loclist, { desc = 'Save and refresh location list' })
 
+-- Treesitter incremental selection
+vim.keymap.set('n', '+', function()
+  -- TODO: do viw in normal mode and use that if it selects less.
+  vim.cmd 'normal! viw'
+  -- local iss = require 'nvim-treesitter.incremental_selection'
+  -- iss.node_incremental()
+end, { desc = 'Expand treesitter selection' })
+
+vim.keymap.set('v', '+', function()
+  local start_pos = vim.fn.getpos "'<"
+  local end_pos = vim.fn.getpos "'>"
+
+  local iss = require 'nvim-treesitter.incremental_selection'
+  iss.node_incremental()
+
+  local new_start = vim.fn.getpos "'<"
+  local new_end = vim.fn.getpos "'>"
+
+  -- If selection hasn't changed, try again
+  if start_pos[2] == new_start[2] and start_pos[3] == new_start[3] and end_pos[2] == new_end[2] and end_pos[3] == new_end[3] then
+    iss.node_incremental()
+  end
+end, { desc = 'Expand treesitter selection' })
+
+vim.keymap.set('v', '-', function()
+  local iss = require 'nvim-treesitter.incremental_selection'
+  iss.node_decremental()
+end, { desc = 'Contract treesitter selection' })
+
 -- Navigate diagnostics
 vim.keymap.set('n', '<F4>', vim.diagnostic.goto_next, { desc = 'Goto next diagnostic message' })
 vim.keymap.set('n', '<F16>', vim.diagnostic.goto_prev, { desc = 'Goto prev diagnostic message' }) -- Shift-F4
@@ -267,9 +296,6 @@ vim.keymap.set('v', ']', '<Esc>`>a]<Esc>`<i[<Esc>', { desc = 'Surround selection
 vim.keymap.set('v', '}', '<Esc>`>a}<Esc>`<i{<Esc>', { desc = 'Surround selection with parentheses' })
 vim.keymap.set('v', '""', '<Esc>`>a"<Esc>`<i"<Esc>', { desc = 'Surround selection with double quotes' })
 vim.keymap.set('v', "''", "<Esc>`>a'<Esc>`<i'<Esc>", { desc = 'Surround selection with single quotes' })
-
--- Select current word with +
-vim.keymap.set('n', '+', 'viw', { desc = 'Select current word' })
 
 -- System clipboard yank operations
 vim.keymap.set('n', '<leader>yf', function()
@@ -1477,7 +1503,7 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
 
       -- Custom color overrides
       local function apply_custom_colors()
@@ -1595,9 +1621,8 @@ require('lazy').setup({
       incremental_selection = {
         enable = true,
         keymaps = {
-          init_selection = '+',
-          node_incremental = '+',
-          node_decremental = '-',
+          node_incremental = nil,
+          init_incremental = nil,
         },
       },
     },
@@ -1723,14 +1748,29 @@ require('lazy').setup({
   {
     'projekt0n/github-nvim-theme',
     name = 'github-theme',
-    lazy = false, -- make sure we load this during startup if it is your main colorscheme
-    priority = 1000, -- make sure to load this before all the other start plugins
+    lazy = false,
+    priority = 1001,
     config = function()
-      require('github-theme').setup {
-        -- ...
-      }
-
+      require('github-theme').setup {}
       vim.cmd 'colorscheme github_dark'
+
+      -- Override treesitter highlights
+      -- vim.api.nvim_set_hl(0, '@type', { fg = '#00ff00' })
+      -- vim.api.nvim_set_hl(0, '@type.builtin', { fg = '#00ff00' })
+      vim.api.nvim_set_hl(0, '@keyword', { fg = '#ffff80' })
+      vim.api.nvim_set_hl(0, '@keyword.operator', { fg = '#ffb0b0' })
+      vim.api.nvim_set_hl(0, '@operator', { fg = '#ffb0b0' })
+      vim.api.nvim_set_hl(0, '@operator.lua', { fg = '#ffb0b0' })
+      vim.api.nvim_set_hl(0, '@operator.c', { fg = '#ffb0b0' })
+      vim.api.nvim_set_hl(0, '@keyword.function', { fg = '#60ff60' })
+      vim.api.nvim_set_hl(0, '@variable', { fg = '#80ff80' })
+      vim.api.nvim_set_hl(0, '@variable.member', { fg = '#c0ffc0' })
+      -- vim.api.nvim_set_hl(0, '@function.call', { fg = '#ffff00' })
+      vim.api.nvim_set_hl(0, 'PreProc', { fg = '#ff80ff' })
+      -- vim.api.nvim_set_hl(0, 'Constant', { fg = '#ffff00' })
+      vim.api.nvim_set_hl(0, 'String', { fg = '#00e0ff' })
+      vim.api.nvim_set_hl(0, 'Function', { fg = '#f0d080' })
+      vim.api.nvim_set_hl(0, 'Comment', { fg = '#888888' })
     end,
   },
 
