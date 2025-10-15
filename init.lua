@@ -1413,6 +1413,7 @@ require('lazy').setup({
       sources = {
         default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev', 'knots', 'ultisnips' },
         providers = {
+          lsp = { score_offset = 110 },
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
           knots = {
             name = 'Knots',
