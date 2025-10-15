@@ -756,6 +756,27 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   end
 end
 
+local function apply_custom_colors()
+  vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
+  vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
+  -- Glowing red end-of-line whitespace
+  vim.api.nvim_set_hl(0, 'ExtraWhitespace', { bg = '#ff0000', fg = '#ff4444', underline = true, bold = true })
+
+  -- Orange markdown titles
+  vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ffa850', bold = true })
+  vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ffb850', bold = true })
+  vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ffc850', bold = true })
+  vim.api.nvim_set_hl(0, '@markup.heading.4.markdown', { fg = '#ffd850', bold = true })
+  vim.api.nvim_set_hl(0, '@markup.heading.5.markdown', { fg = '#ffe850', bold = true })
+  vim.api.nvim_set_hl(0, '@markup.heading.6.markdown', { fg = '#fff850', bold = true })
+
+  -- Dark markdown link URLs (visible but very dark)
+  vim.api.nvim_set_hl(0, '@markup.link.url.markdown_inline', { fg = '#006622' })
+
+  -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
+  -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
+end
+
 ---@type vim.Option
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
@@ -1491,6 +1512,7 @@ require('lazy').setup({
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
     'folke/tokyonight.nvim',
+    -- enabled = false,
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
       ---@diagnostic disable-next-line: missing-fields
@@ -1503,37 +1525,10 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      -- vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'tokyonight-night'
 
       -- Custom color overrides
-      local function apply_custom_colors()
-        vim.api.nvim_set_hl(0, 'Normal', { bg = '#000013' }) -- Customize background color
-        vim.api.nvim_set_hl(0, 'Visual', { bg = utils.adjust_brightness('#a6caf0', 0.45) }) -- Darker selection background
-        -- Glowing red end-of-line whitespace
-        vim.api.nvim_set_hl(0, 'ExtraWhitespace', { bg = '#ff0000', fg = '#ff4444', underline = true, bold = true })
-
-        -- Orange markdown titles
-        vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ffa850', bold = true })
-        vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ffb850', bold = true })
-        vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ffc850', bold = true })
-        vim.api.nvim_set_hl(0, '@markup.heading.4.markdown', { fg = '#ffd850', bold = true })
-        vim.api.nvim_set_hl(0, '@markup.heading.5.markdown', { fg = '#ffe850', bold = true })
-        vim.api.nvim_set_hl(0, '@markup.heading.6.markdown', { fg = '#fff850', bold = true })
-
-        -- Dark markdown link URLs (visible but very dark)
-        vim.api.nvim_set_hl(0, '@markup.link.url.markdown_inline', { fg = '#006622' })
-
-        -- vim.api.nvim_set_hl(0, 'Comment', { fg = '#6aa2f7' }) -- Example: customize comment color
-        -- vim.api.nvim_set_hl(0, 'LineNr', { fg = '#565f89' }) -- Example: customize line numbers
-      end
-
       apply_custom_colors()
-
-      -- Reapply colors after colorscheme changes
-      vim.api.nvim_create_autocmd('ColorScheme', {
-        callback = apply_custom_colors,
-        desc = 'Reapply custom colors after colorscheme change',
-      })
     end,
   },
 
@@ -1749,6 +1744,7 @@ require('lazy').setup({
     'projekt0n/github-nvim-theme',
     name = 'github-theme',
     lazy = false,
+    enabled = false,
     priority = 1001,
     config = function()
       require('github-theme').setup {}
@@ -1771,6 +1767,8 @@ require('lazy').setup({
       vim.api.nvim_set_hl(0, 'String', { fg = '#00e0ff' })
       vim.api.nvim_set_hl(0, 'Function', { fg = '#f0d080' })
       vim.api.nvim_set_hl(0, 'Comment', { fg = '#888888' })
+      vim.api.nvim_set_hl(0, '@markup.list', { fg = '#ff8000' })
+      apply_custom_colors()
     end,
   },
 
