@@ -56,6 +56,10 @@ function! s:BackgroundSetClip_JobEnd(job_id, exit_code, event_type) abort
 endfunction
 
 function! SetSystemClipboard(string) abort
+  if exists('g:no_clipboard_affect') && g:no_clipboard_affect == 1
+    return
+  endif
+
   call ReloadEnvironment()
   let l:display = system('echo $WAYLAND_DISPLAY')
   let l:ssh_custom_callback = system('echo $SSH_CUSTOM_CALLBACK')
@@ -79,7 +83,6 @@ endfunction
 function! YankCurrentDirAbs() abort
   call SetSystemClipboard(expand("%:p:h"))
 endfunction
-
 
 augroup AutoSetSystemClipboard
   autocmd!

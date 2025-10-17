@@ -55,7 +55,8 @@ vim.o.signcolumn = 'auto:2'
 vim.o.updatetime = 250
 
 -- Decrease mapped sequence wait time
-vim.o.timeoutlen = 300
+vim.o.timeout = false
+vim.o.ttimeout = false
 
 -- Configure how new splits should be opened
 vim.o.splitright = true
@@ -205,6 +206,16 @@ vim.keymap.set('n', '<leader>d', function()
   local row = vim.api.nvim_win_get_cursor(0)[1]
   vim.api.nvim_buf_set_lines(0, row, row, false, { line })
 end, { desc = 'Duplicate current line' })
+
+-- Delete without affecting any clipboard
+local function delete_no_clipboard()
+  vim.g.no_clipboard_affect = 1
+  vim.cmd 'normal! "_x'
+  vim.g.no_clipboard_affect = 0
+end
+
+vim.keymap.set('n', '<Del>', delete_no_clipboard, { desc = 'Delete selection without affecting register', noremap = true })
+vim.keymap.set('v', '<Del>', delete_no_clipboard, { desc = 'Delete selection without affecting register', noremap = true })
 
 -- Save current file with Ctrl-X s
 vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
@@ -452,6 +463,12 @@ vim.keymap.set('n', '<Up>', 'gk', { desc = 'Move up by visual line' })
 -- Bind M-T-PageUp to nop by default (can be overridden in specific contexts)
 vim.keymap.set('n', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
 vim.keymap.set('i', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
+
+-- Disabled until further notice:
+vim.keymap.set('n', '<C-a>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('n', '<C-x>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('v', '<C-a>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('v', '<C-x>', '<Nop>', { desc = 'No operation (disabled by default)' })
 
 -- local_vimrc
 
@@ -1023,6 +1040,10 @@ require('lazy').setup({
     },
   },
   {
+    'editorconfig/editorconfig-vim',
+    lazy = false, -- Load immediately to ensure settings are applied on startup
+  },
+  {
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -1092,6 +1113,7 @@ require('lazy').setup({
           -- or a suggestion from your LSP for this to activate.
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
           map('<C-a>a', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+          map('<C-a><C-a>', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
 
           -- Find references for the word under your cursor.
           map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
