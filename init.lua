@@ -174,6 +174,10 @@ vim.keymap.set('n', '<F5>', function()
 end, { desc = 'Goto first diagnostic message' })
 -- vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
 
+-- Navigate quickfix list
+vim.keymap.set('n', '<F7>', '<cmd>cnext<CR>', { desc = 'Goto next quickfix location' }) --
+vim.keymap.set('n', '<C-F7>', '<cmd>cfirst<CR>', { desc = 'Goto first quickfix location' }) -- Also: ]q
+
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -1891,6 +1895,7 @@ require('lazy').setup({
   { -- Linux kernel coding style
     'vivien/vim-linux-coding-style',
     ft = { 'c', 'cpp' },
+    lazy = false,
     config = function()
       vim.g.linuxsty_patterns = { '/linux/', '/kernel/' }
     end,
@@ -2075,11 +2080,17 @@ vim.keymap.set('n', '<leader>sm', MyEditUltiSnips, { desc = 'Edit UltiSnips for 
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
+--
 -- How to inspect binds?
 --
 -- Example:
 --
--- nvim --headless -c "verbose imap <Tab>" -c 'qa!'
+--     rvim --headless -c "verbose imap <Tab>" -c 'qa!'
+--
+-- Show all bindings:
+--
+--     rvim --headless -c "verbose nmap " -c 'qa!' 2>&1
+--
 --
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
