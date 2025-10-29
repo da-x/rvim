@@ -218,8 +218,15 @@ local function delete_no_clipboard()
   vim.g.no_clipboard_affect = 0
 end
 
+local function delete_to_end_no_system_clipboard()
+  vim.g.no_clipboard_affect = 1
+  vim.cmd 'normal! D'
+  vim.g.no_clipboard_affect = 0
+end
+
 vim.keymap.set('n', '<Del>', delete_no_clipboard, { desc = 'Delete selection without affecting register', noremap = true })
 vim.keymap.set('v', '<Del>', delete_no_clipboard, { desc = 'Delete selection without affecting register', noremap = true })
+vim.keymap.set('n', 'D', delete_to_end_no_system_clipboard, { desc = 'Delete to end of line without affecting register', noremap = true })
 
 -- Save current file with Ctrl-X s
 vim.keymap.set('n', '<C-x>s', '<cmd>w<CR>', { desc = 'Save current file' })
