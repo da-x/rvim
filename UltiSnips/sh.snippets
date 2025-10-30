@@ -390,6 +390,13 @@ detached() {
 }
 endsnippet
 
+snippet simplekv
+local example
+local arg
+for arg in "\$@"; do [[ $arg =~ ^([a-zA-F0-9_]+)=(.*)$ ]] && eval "${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"; done
+[[ "\$example" == "0" ]] || echo example
+endsnippet
+
 snippet sequence
 main() {
     local a=()

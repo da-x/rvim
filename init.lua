@@ -2077,8 +2077,7 @@ require('lazy').load { plugins = {
 
 -- Function to edit UltiSnips for current filetype
 function MyEditUltiSnips()
-  local filename = '~/.vim_runtime/UltiSnips/' .. vim.bo.filetype .. '.snippets'
-  vim.cmd('edit ' .. filename)
+  vim.cmd 'UltiSnipsEdit'
 end
 
 -- Keymap for editing UltiSnips

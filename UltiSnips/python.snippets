@@ -71,3 +71,11 @@ def log_write_append(s: str) -> None:
     finally:
         os.close(fd)
 endsnippet
+
+snippet standalone
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.13"
+# dependencies = []
+# ///
+endsnippet
