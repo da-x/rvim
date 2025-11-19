@@ -474,6 +474,8 @@ vim.keymap.set('n', '<Up>', 'gk', { desc = 'Move up by visual line' })
 -- Bind M-T-PageUp to nop by default (can be overridden in specific contexts)
 vim.keymap.set('n', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
 vim.keymap.set('i', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('i', '<T-PageUp>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
+vim.keymap.set('n', '<T-PageUp>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
 
 -- Disabled until further notice:
 vim.keymap.set('n', '<C-a>', '<Nop>', { desc = 'No operation (disabled by default)' })

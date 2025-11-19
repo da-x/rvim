@@ -225,6 +225,10 @@ function! MyShellSettings()
   Indent4Spaces
 endfunction
 
+function! MyRonSettings()
+  Indent4Spaces
+endfunction
+
 augroup MarkdownEditSettings
   autocmd!
 
@@ -238,6 +242,11 @@ augroup ShellEditSettings
   autocmd FileType zsh call MyShellSettings()
 augroup END
 
+augroup RonSettings
+  autocmd!
+
+  autocmd FileType ron call MyRonSettings()
+augroup END
 " =============================================================================
 "
 " Knots

@@ -22,7 +22,7 @@ import os
 # Create a temporary directory
 with tempfile.TemporaryDirectory() as temp_dir:
     print(f'Temporary directory: {temp_dir}')
-    
+
     # You can create files in the temporary directory
     temp_file_path = os.path.join(temp_dir, 'temp_file.txt')
     with open(temp_file_path, 'w') as temp_file:
@@ -78,4 +78,60 @@ snippet standalone
 # requires-python = ">=3.13"
 # dependencies = []
 # ///
+def main():
+    $0
+    pass
+
+if __name__ == "__main__":
+    main()
+endsnippet
+
+snippet standalone_log
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = "~=3.13"
+# dependencies = ["colorlog==6.10.1"]
+# ///
+
+import logging
+from colorlog import ColoredFormatter
+
+# Configure logger
+logger = logging.getLogger('HelloWorldLogger')
+logger.setLevel(logging.DEBUG)
+
+# Create console handler with colored formatter
+console_handler = logging.StreamHandler()
+formatter = ColoredFormatter(
+    "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",
+    datefmt='%Y-%m-%d %H:%M:%S',
+    log_colors={
+        'DEBUG': 'cyan',
+        'INFO': 'green',
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'CRITICAL': 'red',
+    }
+)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
+def main():
+    logger.debug("Debugging the Hello World program")
+    # logger.info("Hello, World!")
+    # logger.warning("This is a warning message")
+    # logger.error("This is an error message")
+    # logger.critical("This is a critical message")
+
+if __name__ == "__main__":
+    main()
+endsnippet
+
+snippet bash
+def bash(script):
+    import os
+    r = os.spawnv(os.P_WAIT, "/bin/bash", ["bash", "-c", script])
+    if r != 0:
+        logger.error(f"failed executing {repr(script)}");
+        raise Exception(f"failed executing {repr(script)}")
 endsnippet
