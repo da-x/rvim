@@ -20,7 +20,7 @@ function! MyGitGrep(arg) abort
   if get(g:, 'gg_recursive', 1)
      let l:recursive = "--recurse-submodules"
   endif
-  call fzf#vim#grep('git grep '.l:recursive.' --line-number --color '.s:string.' 2>/dev/null', 0,
+  call fzf#vim#grep('git grep -I '.l:recursive.' --line-number --color '.s:string.' 2>/dev/null', 0,
       \ { 'dir': MyGitRoot() },
       \ 0)
   call histadd(':', 'Gg '.a:arg)

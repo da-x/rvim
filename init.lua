@@ -65,6 +65,13 @@ vim.o.splitbelow = true
 -- Avoid breakding words
 vim.o.linebreak = true
 
+-- Treesitter based folding
+-- vim.opt.foldmethod = 'expr'
+-- vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
+-- Optional: configure how folded text looks
+-- vim.opt.foldtext = 'v:lua.vim.treesitter.foldtext()'
+-- vim.opt.foldlevelstart = 100
+
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
@@ -471,11 +478,11 @@ vim.keymap.set('v', '<C-Down>', '}', { silent = true, desc = 'Move to next parag
 vim.keymap.set('n', '<Down>', 'gj', { desc = 'Move down by visual line' })
 vim.keymap.set('n', '<Up>', 'gk', { desc = 'Move up by visual line' })
 
--- Bind M-T-PageUp to nop by default (can be overridden in specific contexts)
-vim.keymap.set('n', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
-vim.keymap.set('i', '<M-T-PageUp>', '<Nop>', { desc = 'No operation (disabled by default)' })
-vim.keymap.set('i', '<T-PageUp>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
-vim.keymap.set('n', '<T-PageUp>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
+-- Bind S-CR to nop by default (can be overridden in specific contexts)
+vim.keymap.set('n', '<S-CR>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('i', '<S-CR>', '<Nop>', { desc = 'No operation (disabled by default)' })
+vim.keymap.set('i', '<C-CR>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
+vim.keymap.set('n', '<C-CR>', '<Return>') -- Because I accidentally do shirt-enter when I want enter
 
 -- Disabled until further notice:
 vim.keymap.set('n', '<C-a>', '<Nop>', { desc = 'No operation (disabled by default)' })
@@ -589,10 +596,10 @@ vim.api.nvim_create_autocmd('FileType', {
     )
 
     -- Alternative save and close
-    vim.keymap.set('n', '<M-T-PageUp>', function()
+    vim.keymap.set('n', '<C-CR>', function()
       vim.fn.EndCommitMessageEdit()
     end, vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
-    vim.keymap.set('i', '<M-T-PageUp>', '<C-c><cmd>lua vim.fn.EndCommitMessageEdit()<cr>', vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
+    vim.keymap.set('i', '<C-CR>', '<C-c><cmd>lua vim.fn.EndCommitMessageEdit()<cr>', vim.tbl_extend('force', opts, { desc = 'End commit message edit' }))
   end,
 })
 
@@ -1474,7 +1481,7 @@ require('lazy').setup({
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'super-tab',
         ['<CR>'] = { blink_cmp_enter },
-        ['<M-T-PageUp>'] = { accept_blink_cmcp },
+        ['<C-CR>'] = { accept_blink_cmcp },
         ['<C-a>'] = { accept_blink_cmcp },
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
