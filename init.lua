@@ -611,15 +611,20 @@ vim.api.nvim_create_autocmd('BufRead', {
   callback = function(ev)
     local opts = { buffer = ev.buf }
 
+    local function set_word(text)
+      local keys = '0"_ciw' .. text .. '<Esc><Down>0'
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), 'n', false)
+    end
+
     -- Rebase action shortcuts
-    vim.keymap.set('n', 'p', '0ciwpick<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to pick' }))
-    vim.keymap.set('n', 'r', '0ciwreword<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to reword' }))
-    vim.keymap.set('n', 'e', '0ciwedit<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to edit' }))
-    vim.keymap.set('n', 's', '0ciwsquash<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
-    vim.keymap.set('n', 'f', '0ciwfixup<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to fixup' }))
-    vim.keymap.set('n', 'x', '0ciwexec<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to exec' }))
-    vim.keymap.set('n', 'd', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
-    vim.keymap.set('n', 'k', '0ciwdrop<Esc><Down>0', vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
+    vim.keymap.set('n', 'p', function() set_word('pick') end, vim.tbl_extend('force', opts, { desc = 'Set to pick' }))
+    vim.keymap.set('n', 'r', function() set_word('reword') end, vim.tbl_extend('force', opts, { desc = 'Set to reword' }))
+    vim.keymap.set('n', 'e', function() set_word('edit') end, vim.tbl_extend('force', opts, { desc = 'Set to edit' }))
+    vim.keymap.set('n', 's', function() set_word('squash') end, vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
+    vim.keymap.set('n', 'f', function() set_word('fixup') end, vim.tbl_extend('force', opts, { desc = 'Set to fixup' }))
+    vim.keymap.set('n', 'x', function() set_word('exec') end, vim.tbl_extend('force', opts, { desc = 'Set to exec' }))
+    vim.keymap.set('n', 'd', function() set_word('drop') end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
+    vim.keymap.set('n', 'k', function() set_word('drop') end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
 
     -- Movement shortcuts - use vim-move plugin directly
     vim.keymap.set('n', '<C-Up>', '<Plug>MoveLineUp', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
@@ -748,6 +753,9 @@ vim.api.nvim_create_user_command('SetupKnotBindings', function()
     vim.fn['knot#goToBacklinks']()
   end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
   vim.keymap.set('n', '<C-h>', function()
+    vim.fn['knot#goToBacklinks']()
+  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
+  vim.keymap.set('n', '<C-Backspace>', function()
     vim.fn['knot#goToBacklinks']()
   end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
   vim.keymap.set('n', '<C-n><PageDown>', function()
@@ -1416,6 +1424,11 @@ require('lazy').setup({
 
   {
     'matze/vim-move',
+    config = function() end,
+  },
+
+  {
+    'norcalli/nvim-colorizer.lua',
     config = function() end,
   },
 
@@ -2088,6 +2101,8 @@ require('lazy').load { plugins = {
 function MyEditUltiSnips()
   vim.cmd 'UltiSnipsEdit'
 end
+
+require('colorizer').setup()
 
 -- Keymap for editing UltiSnips
 vim.keymap.set('n', '<leader>sm', MyEditUltiSnips, { desc = 'Edit UltiSnips for current filetype' })
