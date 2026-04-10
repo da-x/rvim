@@ -145,6 +145,12 @@ _trace_to_file() {
 }
 endsnippet
 
+snippet script-source
+script-path() {
+    echo ${BASH_SOURCE[0]:-${(%):-%x}}
+}
+endsnippet
+
 snippet trace-pretty-stdout
 PS4='\033[38;5;237m$(date "+%Y.%m.%d-%H:%M:%S.%N" | cut -c-23) \033[38;5;243m${BASH_SOURCE}\033[38;5;237m:${FUNCNAME[0]:+${FUNCNAME[0]}():}\033[38;5;243m${LINENO}\033[38;5;237m: \033[00m'
 endsnippet

@@ -603,6 +603,32 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
+local function my_nvim_tree_on_attach(bufnr)
+  local function opts(desc)
+    return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+  end
+  local api = require 'nvim-tree.api'
+
+  api.config.mappings.default_on_attach(bufnr)
+
+  local function nvim_tree_copy_file_to()
+    local node = api.tree.get_node_under_cursor()
+
+    local file_src = node['absolute_path']
+    -- The args of input are {prompt}, {default}, {completion}
+    -- Read in the new file path using the existing file's path as the baseline.
+    local file_out = vim.fn.input('COPY TO: ', file_src, 'file')
+
+    -- Create any parent dirs as required
+    local dir = vim.fn.fnamemodify(file_out, ':h')
+    vim.fn.system { 'mkdir', '-p', dir }
+    -- Copy the file
+    vim.fn.system { 'cp', file_src, file_out }
+  end
+
+  vim.keymap.set('n', 'c', nvim_tree_copy_file_to, opts 'Copy File')
+end
+
 -- Git rebase todo buffer mappings
 vim.api.nvim_create_autocmd('BufRead', {
   pattern = 'git-rebase-todo',
@@ -617,14 +643,30 @@ vim.api.nvim_create_autocmd('BufRead', {
     end
 
     -- Rebase action shortcuts
-    vim.keymap.set('n', 'p', function() set_word('pick') end, vim.tbl_extend('force', opts, { desc = 'Set to pick' }))
-    vim.keymap.set('n', 'r', function() set_word('reword') end, vim.tbl_extend('force', opts, { desc = 'Set to reword' }))
-    vim.keymap.set('n', 'e', function() set_word('edit') end, vim.tbl_extend('force', opts, { desc = 'Set to edit' }))
-    vim.keymap.set('n', 's', function() set_word('squash') end, vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
-    vim.keymap.set('n', 'f', function() set_word('fixup') end, vim.tbl_extend('force', opts, { desc = 'Set to fixup' }))
-    vim.keymap.set('n', 'x', function() set_word('exec') end, vim.tbl_extend('force', opts, { desc = 'Set to exec' }))
-    vim.keymap.set('n', 'd', function() set_word('drop') end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
-    vim.keymap.set('n', 'k', function() set_word('drop') end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
+    vim.keymap.set('n', 'p', function()
+      set_word 'pick'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to pick' }))
+    vim.keymap.set('n', 'r', function()
+      set_word 'reword'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to reword' }))
+    vim.keymap.set('n', 'e', function()
+      set_word 'edit'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to edit' }))
+    vim.keymap.set('n', 's', function()
+      set_word 'squash'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
+    vim.keymap.set('n', 'f', function()
+      set_word 'fixup'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to fixup' }))
+    vim.keymap.set('n', 'x', function()
+      set_word 'exec'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to exec' }))
+    vim.keymap.set('n', 'd', function()
+      set_word 'drop'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
+    vim.keymap.set('n', 'k', function()
+      set_word 'drop'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to drop' }))
 
     -- Movement shortcuts - use vim-move plugin directly
     vim.keymap.set('n', '<C-Up>', '<Plug>MoveLineUp', vim.tbl_extend('force', opts, { desc = 'Move line up' }))
@@ -2033,6 +2075,7 @@ require('lazy').setup({
         enable = true,
         update_root = true,
       },
+      on_attach = my_nvim_tree_on_attach,
     },
     keys = {
       { '<F3>', '<cmd>NvimTreeFindFileToggle<CR>', desc = 'Find file in tree and toggle' },

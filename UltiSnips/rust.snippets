@@ -138,6 +138,13 @@ snippet fdis
 #[cfg(feature = "disabled")]
 endsnippet
 
+snippet raw_string
+pub const RAW_STRING: &str = r#"\
+This is a "raw"
+multiline string
+with backslashes"#;
+endsnippet
+
 snippet regex
 lazy_static! {
     static ref RE: Regex = Regex::new("...").unwrap();
