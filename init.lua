@@ -1,5 +1,4 @@
--- Set <space> as the leader key
--- See `:help mapleader`
+-- Set <space> as the leadSee `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -653,6 +652,9 @@ vim.api.nvim_create_autocmd('BufRead', {
       set_word 'edit'
     end, vim.tbl_extend('force', opts, { desc = 'Set to edit' }))
     vim.keymap.set('n', 's', function()
+      set_word 'squash'
+    end, vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
+    vim.keymap.set('n', 'S', function()
       set_word 'squash'
     end, vim.tbl_extend('force', opts, { desc = 'Set to squash' }))
     vim.keymap.set('n', 'f', function()
