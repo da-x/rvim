@@ -187,6 +187,16 @@ endfun
 
 command! Indent4Spaces call Indent4Spaces()
 
+func! Indent4Tab(...)
+  setlocal noexpandtab
+
+  setlocal shiftwidth=4
+  setlocal tabstop=4
+  setlocal nosmarttab
+endfun
+
+command! Indent4Tab call Indent4Tab()
+
 " =============================================================================
 " Eat
 
