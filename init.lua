@@ -870,6 +870,19 @@ end
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
+-- Rustaceanvim configuration (must be set before lazy.setup)
+vim.g.rustaceanvim = {
+  server = {
+    cmd = function()
+      return {
+        vim.fn.expand '$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer',
+        '--log-file',
+        vim.fn.tempname() .. '-rust-analyzer.log',
+      }
+    end,
+  },
+}
+
 -- [[ Configure and install plugins ]]
 --
 --  To check the current status of your plugins, run
@@ -883,6 +896,7 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
+  { 'mrcjkb/rustaceanvim', version = '^9', lazy = false },
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
@@ -1322,13 +1336,7 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        rust_analyzer = {
-          settings = {
-            server = {
-              path = vim.fn.expand '$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rust-analyzer',
-            },
-          },
-        },
+        -- rust_analyzer is handled by rustaceanvim, not nvim-lspconfig
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -2155,6 +2163,18 @@ vim.keymap.set('n', '<leader>sm', MyEditUltiSnips, { desc = 'Edit UltiSnips for 
 -- Source additional VimScript configuration
 vim.cmd('source ' .. vim.fn.stdpath 'config' .. '/vimscript.vim')
 
+-- Make @lsp.type.unresolvedReference look clean (no underline/wavy line)
+vim.api.nvim_set_hl(0, '@lsp.type.unresolvedReference.rust', { undercurl = false, underline = false })
+
+-- rust_analyzer is handled by rustaceanvim, not nvim-lspconfig
+vim.lsp.enable('rust_analyzer', false)
+
+-- Re-apply after colorscheme changes
+vim.api.nvim_create_autocmd('ColorScheme', {
+  callback = function()
+    vim.api.nvim_set_hl(0, '@lsp.type.unresolvedReference.rust', { undercurl = false, underline = false })
+  end,
+})
 --
 -- How to inspect binds?
 --
