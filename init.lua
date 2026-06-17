@@ -405,6 +405,7 @@ end, { desc = 'Switch buffers' })
 vim.keymap.set('n', '<C-F2>', function()
   require('telescope.builtin').oldfiles()
 end, { desc = 'Recent files (MRU)' })
+vim.keymap.set('n', '<F26>', '<C-F2>', { remap = true })
 
 -- Close buffer with Ctrl-Delete
 vim.keymap.set('n', '<C-Del>', '<cmd>bd<CR>', { desc = 'Close current buffer' })
@@ -1719,7 +1720,7 @@ require('lazy').setup({
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      indent = { enable = true, disable = { 'ruby' } },
+      indent = { enable = true, disable = { 'ruby', 'cpp', 'c' } },
       incremental_selection = {
         enable = true,
         keymaps = {
