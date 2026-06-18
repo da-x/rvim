@@ -835,6 +835,16 @@ vim.api.nvim_create_user_command('ToggleFormatOnSave', function()
   print('Format on save: ' .. status)
 end, { desc = 'Toggle format on save globally' })
 
+vim.keymap.set('n', '<leader>af', ':ToggleFormatOnSave<CR>')
+
+vim.api.nvim_create_user_command('ToggleEditorConfig', function()
+  vim.g.editorconfig = not vim.g.editorconfig
+  local status = vim.g.editorconfig and 'enabled' or 'disabled'
+  print('EditorConfig on save: ' .. status)
+end, { desc = 'Toggle EditorConfig globally' })
+
+vim.keymap.set('n', '<leader>ae', ':ToggleEditorConfig<CR>')
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
