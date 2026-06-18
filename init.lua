@@ -514,6 +514,13 @@ end
 -- Keybinds to make split navigation easier.
 vim.keymap.set('n', '<leader>hi', utils.show_highlight_groups, { desc = 'Show [H]ighlight [I]nfo under cursor' })
 vim.keymap.set('n', '<leader>hk', utils.show_key_notation, { desc = 'Show [K]ey notation for next key pressed' })
+vim.keymap.set('n', '<leader>n<F1>', function()
+  require('telescope.builtin').keymaps {
+    filter = function(keymap)
+      return string.find(keymap.desc or '', 'knot', 1, true) ~= nil
+    end,
+  }
+end, { desc = 'Search [K]not keymaps' })
 
 --  Use CTRL+<hjkl> to switch between windows
 --
@@ -791,38 +798,41 @@ vim.api.nvim_create_user_command('SetupKnotBindings', function()
   -- URL operations
   vim.keymap.set('n', '<C-PageUp>', function()
     vim.fn['knot#pickUrl']()
-  end, vim.tbl_extend('force', opts, { desc = 'Pick URL from current knot' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Open URLs related to current knot' }))
 
   -- Navigation
   vim.keymap.set('n', '<C-n><Backspace>', function()
     vim.fn['knot#goToBacklinks']()
-  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Go to knot backlinks' }))
   vim.keymap.set('n', '<C-h>', function()
     vim.fn['knot#goToBacklinks']()
-  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Go to knot backlinks' }))
   vim.keymap.set('n', '<C-Backspace>', function()
     vim.fn['knot#goToBacklinks']()
-  end, vim.tbl_extend('force', opts, { desc = 'Go to backlinks' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Go to knot backlinks' }))
   vim.keymap.set('n', '<C-n><PageDown>', function()
     vim.fn['knot#Pick']()
-  end, vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Pick knot by name' }))
   vim.keymap.set('n', '<F3>', function()
     vim.fn['knot#Pick']()
-  end, vim.tbl_extend('force', opts, { desc = 'Pick knot' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Pick knot by name' }))
+  vim.keymap.set('n', '<leader>nh', function()
+    vim.fn['knot#Home']()
+  end, vim.tbl_extend('force', opts, { desc = 'Go to home knot' }))
   vim.keymap.set('n', '<C-F1>', function()
     vim.fn['knot#openReminder']()
-  end, vim.tbl_extend('force', opts, { desc = 'Open reminder' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Fzf lookup and open of knots by title' }))
 
   -- Insertions and extractions
   vim.keymap.set('i', '<C-t>', '<C-c>i<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp' }))
   vim.keymap.set('n', '<C-t>', 'G<cmd>lua MarkdownInsertTimestamp()<cr>A', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
   vim.keymap.set('n', '<C-n>u', function()
     vim.fn['knot#insertOpenedTabURL']()
-  end, vim.tbl_extend('force', opts, { desc = 'Insert opened tab URL' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Insert opened tab URL in knot' }))
   vim.keymap.set('n', '<C-n><Up>', 'i<C-R>=knot#DateLink()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert date link' }))
   vim.keymap.set('n', '<leader>]', function()
     vim.fn['knot#InsertReminder']()
-  end, vim.tbl_extend('force', opts, { desc = 'Insert reminder' }))
+  end, vim.tbl_extend('force', opts, { desc = 'Insert reminder in knot' }))
 
   -- Carve operation
   vim.keymap.set('x', '<C-n><Insert>', ':<c-u>call knot#CarveCurrentInteractive()<CR>', vim.tbl_extend('force', opts, { desc = 'Carve current selection' }))
