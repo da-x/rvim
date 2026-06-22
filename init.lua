@@ -753,32 +753,6 @@ vim.api.nvim_create_autocmd('FileType', {
       vim.tbl_extend('force', opts, { desc = 'Insert date line at end' })
     )
     vim.keymap.set('n', '<A-e><CR>', 'Go<C-R>=MyVimEditTimestamp()<CR>', vim.tbl_extend('force', opts, { desc = 'Insert timestamp at end' }))
-
-    -- Drag markdown bullets up/down
-    vim.keymap.set('n', '<M-k>', function()
-      vim.fn.MyMarkdownDragUp()
-    end, vim.tbl_extend('force', opts, { desc = 'Move line up' }))
-    vim.keymap.set('n', '<M-j>', function()
-      vim.fn.MyMarkdownDragDown()
-    end, vim.tbl_extend('force', opts, { desc = 'Move line down' }))
-    vim.keymap.set('v', '<M-k>', function()
-      vim.fn.MyMarkdownDragUp()
-    end, vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
-    vim.keymap.set('v', '<M-j>', function()
-      vim.fn.MyMarkdownDragDown()
-    end, vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
-    vim.keymap.set('n', '<S-Up>', function()
-      vim.fn.MyMarkdownDragUp()
-    end, vim.tbl_extend('force', opts, { desc = 'Move line up' }))
-    vim.keymap.set('n', '<S-Down>', function()
-      vim.fn.MyMarkdownDragDown()
-    end, vim.tbl_extend('force', opts, { desc = 'Move line down' }))
-    vim.keymap.set('v', '<S-Up>', function()
-      vim.fn.MyMarkdownDragUp()
-    end, vim.tbl_extend('force', opts, { desc = 'Move selection up' }))
-    vim.keymap.set('v', '<S-Down>', function()
-      vim.fn.MyMarkdownDragDown()
-    end, vim.tbl_extend('force', opts, { desc = 'Move selection down' }))
   end,
 })
 
@@ -919,6 +893,7 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   { 'mrcjkb/rustaceanvim', version = '^9', lazy = false },
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  { 'satozawa/graft.nvim', lazy = false, config = true, opts = { keymaps = { enter_normal = false } } },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
