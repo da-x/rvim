@@ -329,22 +329,22 @@ function! MyMarkdownBulletMetrics(start_line, dir, start_indent)
 
   if a:dir == 1
     " Find the last line with equal or greater indentation
-    while l:end_line < l:last_line && indent(l:end_line + 1) > current_indent
+    while l:end_line < l:last_line && indent(l:end_line + 1) > l:current_indent
       let l:end_line += 1
     endwhile
     return [l:current_indent, l:current_line, l:end_line]
   else
     " Find the first line with equal or greater indentation
-    while l:end_line > 1 && indent(l:end_line - 1) > current_indent
+    while l:end_line > 1 && indent(l:end_line - 1) > l:current_indent
       let l:end_line -= 1
     endwhile
     let l:end_line -= 1
     let l:current_line -= 1
-    if l:end_line == l:current_line && indent(l:end_line) < current_indent
+    if l:end_line == l:current_line && indent(l:end_line) < l:current_indent
       return [-1, 0, 0]
     endif
     return [l:current_indent, l:end_line, l:current_line]
-  fi
+  endif
 endfunction
 
 function! MyMarkdownSelectWholeBullet()
